@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+
+# Aztec artifacts
+contracts/*/target/
+src/artifacts/
+
+# Deployment secrets (keep deployment info, not secrets)
+deployments/*.secret.json
+
+# IDE
+.vscode/
+.idea/

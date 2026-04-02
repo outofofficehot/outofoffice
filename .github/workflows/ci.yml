@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+  NARGO_VERSION: '0.35.0'
+
+jobs:
+  # ============================================
+  # Frontend Build & Lint
+  # ============================================
+  frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  # ============================================
+  # Contract Compilation
+  # ============================================
+  contract:
+    name: Contract Compile
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Noir (nargo)
+        run: |
+          curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash
+          echo "$HOME/.nargo/bin" >> $GITHUB_PATH
+        env:
+          NOIRUP_VERSION: ${{ env.NARGO_VERSION }}
+
+      - name: Compile contract
+        working-directory: contracts/linked_spark
+        run: |
+          nargo --version
+          nargo compile
+
+      - name: Upload contract artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-artifact
+          path: contracts/linked_spark/target/
+          retention-days: 7
+
+  # ============================================
+  # Contract Tests (when sandbox available)
+  # ============================================
+  # contract-test:
+  #   name: Contract Tests
+  #   runs-on: ubuntu-latest
+  #   needs: contract
+  #   
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #     
+  #     - name: Download contract artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: contract-artifact
+  #         path: contracts/linked_spark/target/
+  #     
+  #     - name: Start Aztec Sandbox
+  #       run: |
+  #         docker run -d -p 8080:8080 aztecprotocol/aztec:latest
+  #         sleep 30  # Wait for sandbox to start
+  #     
+  #     - name: Run tests
+  #       run: npm run test:contract
