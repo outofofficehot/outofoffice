@@ -1,5 +1,5 @@
 [package]
-name = "linked_spark"
+name = "out_of_office"
 type = "contract"
 authors = ["LinkedSpark"]
 compiler_version = ">=0.35.0"

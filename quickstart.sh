@@ -4,7 +4,7 @@
 
 set -e
 
-echo "💘🔒 LinkedSpark Quick Start"
+echo "🏖️ Out Of Office - Quick Start"
 echo ""
 
 # Colors
@@ -50,8 +50,8 @@ fi
 
 echo ""
 echo "🏗️  Step 3: Compiling contract..."
-if [ -d "contracts/linked_spark" ]; then
-    cd contracts/linked_spark
+if [ -d "contracts/out_of_office" ]; then
+    cd contracts/out_of_office
     if command -v nargo &> /dev/null; then
         nargo compile
         echo -e "${GREEN}✓ Contract compiled${NC}"

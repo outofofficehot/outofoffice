@@ -1,4 +1,4 @@
-// LinkedSpark: Private Mutual Interest Signaling
+// Out Of Office: Private Mutual Interest Signaling
 // 
 // Privacy guarantees:
 // - Signals are private notes: only the sender can see their outgoing signals
@@ -53,7 +53,7 @@ impl NoteInterface<SIGNAL_NOTE_LEN> for SignalNote {
 
     fn get_note_type_id() -> Field {
         // Unique identifier for this note type
-        0x4c494e4b53504152 // "LINKSPAR" in hex
+        0x4f55544f464f4646 // "OUTOFOFF" in hex
     }
 
     fn get_header(self) -> NoteHeader {
@@ -101,7 +101,7 @@ global STAKE_AMOUNT: Field = 10_000_000; // $10 in 6 decimal places (USDC)
 global SIGNAL_TIMEOUT_DAYS: Field = 30;
 
 #[aztec(contract)]
-contract LinkedSpark {
+contract OutOfOffice {
     use dep::aztec::prelude::*;
     use crate::{SignalNote, SIGNAL_NOTE_LEN, STAKE_AMOUNT};
 

@@ -12,7 +12,7 @@ import {
   Fr,
   AztecAddress,
 } from '@aztec/aztec.js';
-import { LinkedSparkContract } from '../src/artifacts/LinkedSpark';
+import { OutOfOfficeContract } from '../src/artifacts/OutOfOffice';
 
 const NETWORKS = {
   sandbox: 'http://localhost:8080',
@@ -23,7 +23,7 @@ async function main() {
   const network = process.env.NETWORK || 'sandbox';
   const pxeUrl = NETWORKS[network as keyof typeof NETWORKS];
   
-  console.log(`\n🔐 LinkedSpark Deployment`);
+  console.log(`\n🏖️ Out Of Office Deployment`);
   console.log(`   Network: ${network}`);
   console.log(`   PXE: ${pxeUrl}\n`);
 
@@ -47,8 +47,8 @@ async function main() {
   console.log(`   ✓ Deployer: ${deployerAddress.toString()}\n`);
 
   // Deploy contract
-  console.log('📄 Deploying LinkedSpark contract...');
-  const contract = await LinkedSparkContract.deploy(
+  console.log('📄 Deploying OutOfOffice contract...');
+  const contract = await OutOfOfficeContract.deploy(
     wallet,
     deployerAddress, // Admin address
   )

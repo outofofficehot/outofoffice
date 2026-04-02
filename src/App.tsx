@@ -1,113 +1,48 @@
 import React, { useState, useEffect } from 'react';
+import Landing from './pages/Landing';
 import { useAztec } from './hooks/useAztec';
 import { extractLinkedInId, isValidLinkedIn } from './utils/linkedin';
 
-// Styles (inline for simplicity)
-const styles = {
-  container: {
-    maxWidth: '600px',
-    margin: '0 auto',
-    padding: '20px',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-  },
-  header: {
-    textAlign: 'center' as const,
-    marginBottom: '40px',
-  },
-  logo: {
-    fontSize: '48px',
-    marginBottom: '10px',
-  },
-  title: {
-    fontSize: '32px',
-    fontWeight: 'bold',
-    margin: '10px 0',
-  },
-  subtitle: {
-    color: '#666',
-    fontSize: '16px',
-  },
-  card: {
-    background: '#fff',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
-  input: {
-    width: '100%',
-    padding: '12px 16px',
-    fontSize: '16px',
-    border: '2px solid #e0e0e0',
-    borderRadius: '8px',
-    marginBottom: '16px',
-    boxSizing: 'border-box' as const,
-  },
-  button: {
-    width: '100%',
-    padding: '14px 24px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'background 0.2s',
-  },
-  primaryButton: {
-    background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
-    color: 'white',
-  },
-  secondaryButton: {
-    background: '#f0f0f0',
-    color: '#333',
-  },
-  disabledButton: {
-    background: '#ccc',
-    cursor: 'not-allowed',
-  },
-  alert: {
-    padding: '12px 16px',
-    borderRadius: '8px',
-    marginBottom: '16px',
-  },
-  warning: {
-    background: '#FFF3CD',
-    border: '1px solid #FFECB5',
-    color: '#856404',
-  },
-  success: {
-    background: '#D4EDDA',
-    border: '1px solid #C3E6CB',
-    color: '#155724',
-  },
-  error: {
-    background: '#F8D7DA',
-    border: '1px solid #F5C6CB',
-    color: '#721C24',
-  },
-  signalList: {
-    listStyle: 'none',
-    padding: 0,
-    margin: 0,
-  },
-  signalItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '12px',
-    borderBottom: '1px solid #eee',
-  },
-  matchBadge: {
-    background: '#FF6B6B',
-    color: 'white',
-    padding: '4px 12px',
-    borderRadius: '20px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-  },
+// Check if we should show app directly (e.g., /app route or returning user)
+const shouldShowApp = () => {
+  if (typeof window === 'undefined') return false;
+  return window.location.hash === '#app' || localStorage.getItem('ooo_visited') === 'true';
 };
 
 function App() {
+  const [showApp, setShowApp] = useState(shouldShowApp);
+  
+  const handleLaunchApp = () => {
+    localStorage.setItem('ooo_visited', 'true');
+    window.location.hash = 'app';
+    setShowApp(true);
+  };
+
+  // Handle hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      setShowApp(window.location.hash === '#app');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  if (!showApp) {
+    return <Landing onLaunchApp={handleLaunchApp} />;
+  }
+
+  return <MainApp onBackToLanding={() => { window.location.hash = ''; setShowApp(false); }} />;
+}
+
+// ============================================
+// Main Application
+// ============================================
+
+interface MainAppProps {
+  onBackToLanding: () => void;
+}
+
+function MainApp({ onBackToLanding }: MainAppProps) {
   const {
     isConnected,
     isLoading,
@@ -127,7 +62,6 @@ function App() {
 
   // Connect on mount
   useEffect(() => {
-    // Auto-connect to sandbox in development
     if (import.meta.env.DEV) {
       connect('sandbox');
     }
@@ -172,15 +106,16 @@ function App() {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <div style={styles.logo}>💘🔒</div>
-          <h1 style={styles.title}>LinkedSpark</h1>
+          <button onClick={onBackToLanding} style={styles.backButton}>← Back</button>
+          <div style={styles.logo}>🏖️</div>
+          <h1 style={styles.title}>Out Of Office</h1>
           <p style={styles.subtitle}>Private mutual interest signaling</p>
         </div>
 
         <div style={styles.card}>
           <div style={{ ...styles.alert, ...styles.warning }}>
-            ⚠️ <strong>Alpha Network</strong>: This app runs on Aztec Alpha mainnet. 
-            Use test tokens only. There is a known vulnerability being fixed in v5 (July 2026).
+            ⚠️ <strong>Alpha Network</strong>: Running on Aztec Alpha. 
+            Use test tokens only.
           </div>
 
           <button
@@ -188,7 +123,7 @@ function App() {
             onClick={() => connect('sandbox')}
             disabled={isLoading}
           >
-            {isLoading ? 'Connecting...' : 'Connect to Aztec'}
+            {isLoading ? 'Connecting...' : 'Connect Wallet'}
           </button>
 
           {error && (
@@ -197,12 +132,6 @@ function App() {
             </div>
           )}
         </div>
-
-        <div style={{ textAlign: 'center', color: '#999', fontSize: '14px' }}>
-          <p>Signal interest in someone privately.</p>
-          <p>If they signal you back, you both find out.</p>
-          <p>If not, <strong>no one ever knows</strong>.</p>
-        </div>
       </div>
     );
   }
@@ -210,10 +139,11 @@ function App() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <div style={styles.logo}>💘🔒</div>
-        <h1 style={styles.title}>LinkedSpark</h1>
+        <button onClick={onBackToLanding} style={styles.backButton}>← Back</button>
+        <div style={styles.logo}>🏖️</div>
+        <h1 style={styles.title}>Out Of Office</h1>
         <p style={styles.subtitle}>
-          Connected to Aztec • {myMatches.length} matches • {mySignals.length} signals
+          Connected • {myMatches.length} matches • {mySignals.length} signals
         </p>
       </div>
 
@@ -229,7 +159,7 @@ function App() {
               flex: 1,
             }}
           >
-            {t === 'signal' && '💘 Signal'}
+            {t === 'signal' && '🏖️ Signal'}
             {t === 'matches' && '🎉 Matches'}
             {t === 'history' && '📜 History'}
           </button>
@@ -278,7 +208,7 @@ function App() {
             }}
             disabled={isLoading || !myLinkedIn || !theirLinkedIn}
           >
-            💘 Signal Interest ($10 stake)
+            🏖️ Signal Interest ($10 stake)
           </button>
 
           <p style={{ color: '#999', fontSize: '14px', marginTop: '16px', textAlign: 'center' }}>
@@ -342,9 +272,9 @@ function App() {
       )}
 
       {/* How it works */}
-      <div style={{ ...styles.card, background: '#f8f9fa' }}>
+      <div style={{ ...styles.card, background: '#1a1a2e' }}>
         <h3 style={{ marginTop: 0 }}>How It Works</h3>
-        <ol style={{ paddingLeft: '20px', color: '#666' }}>
+        <ol style={{ paddingLeft: '20px', color: '#999' }}>
           <li>Enter your LinkedIn and theirs</li>
           <li>Stake $10 to signal interest</li>
           <li>Your signal is <strong>encrypted</strong> — they can't see it</li>
@@ -355,5 +285,129 @@ function App() {
     </div>
   );
 }
+
+// ============================================
+// Styles
+// ============================================
+
+const styles: { [key: string]: React.CSSProperties } = {
+  container: {
+    maxWidth: '600px',
+    margin: '0 auto',
+    padding: '20px',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: '40px',
+  },
+  backButton: {
+    position: 'absolute',
+    left: '20px',
+    top: '20px',
+    background: 'rgba(255,255,255,0.1)',
+    border: 'none',
+    color: '#fff',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
+  logo: {
+    fontSize: '48px',
+    marginBottom: '10px',
+  },
+  title: {
+    fontSize: '32px',
+    fontWeight: 'bold',
+    margin: '10px 0',
+    color: '#fff',
+  },
+  subtitle: {
+    color: '#999',
+    fontSize: '16px',
+  },
+  card: {
+    background: '#16213e',
+    borderRadius: '12px',
+    padding: '24px',
+    marginBottom: '20px',
+    border: '1px solid rgba(255,255,255,0.1)',
+  },
+  input: {
+    width: '100%',
+    padding: '12px 16px',
+    fontSize: '16px',
+    border: '1px solid rgba(255,255,255,0.2)',
+    borderRadius: '8px',
+    marginBottom: '16px',
+    boxSizing: 'border-box',
+    background: 'rgba(255,255,255,0.05)',
+    color: '#fff',
+  },
+  button: {
+    width: '100%',
+    padding: '14px 24px',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+  },
+  primaryButton: {
+    background: 'linear-gradient(135deg, #e94560 0%, #ff6b6b 100%)',
+    color: 'white',
+  },
+  secondaryButton: {
+    background: 'rgba(255,255,255,0.1)',
+    color: '#fff',
+  },
+  disabledButton: {
+    background: '#555',
+    cursor: 'not-allowed',
+  },
+  alert: {
+    padding: '12px 16px',
+    borderRadius: '8px',
+    marginBottom: '16px',
+  },
+  warning: {
+    background: 'rgba(255, 193, 7, 0.1)',
+    border: '1px solid rgba(255, 193, 7, 0.3)',
+    color: '#ffc107',
+  },
+  success: {
+    background: 'rgba(16, 185, 129, 0.1)',
+    border: '1px solid rgba(16, 185, 129, 0.3)',
+    color: '#10b981',
+  },
+  error: {
+    background: 'rgba(239, 68, 68, 0.1)',
+    border: '1px solid rgba(239, 68, 68, 0.3)',
+    color: '#ef4444',
+  },
+  signalList: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+  },
+  signalItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '12px',
+    borderBottom: '1px solid rgba(255,255,255,0.1)',
+    color: '#fff',
+  },
+  matchBadge: {
+    background: '#e94560',
+    color: 'white',
+    padding: '4px 12px',
+    borderRadius: '20px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+  },
+};
 
 export default App;

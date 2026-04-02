@@ -63,7 +63,7 @@ jobs:
           NOIRUP_VERSION: ${{ env.NARGO_VERSION }}
 
       - name: Compile contract
-        working-directory: contracts/linked_spark
+        working-directory: contracts/out_of_office
         run: |
           nargo --version
           nargo compile
@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: contract-artifact
-          path: contracts/linked_spark/target/
+          path: contracts/out_of_office/target/
           retention-days: 7
 
   # ============================================

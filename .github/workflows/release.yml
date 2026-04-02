@@ -36,7 +36,7 @@ jobs:
         run: npm ci
 
       - name: Compile contract
-        working-directory: contracts/linked_spark
+        working-directory: contracts/out_of_office
         run: nargo compile
 
       - name: Build frontend
@@ -49,14 +49,14 @@ jobs:
         run: |
           mkdir -p release
           cp -r dist release/frontend
-          cp -r contracts/linked_spark/target release/contract
+          cp -r contracts/out_of_office/target release/contract
           cp README.md DEPLOYMENT.md release/
-          tar -czvf linkedspark-${{ github.ref_name }}.tar.gz release/
+          tar -czvf outofoffice-${{ github.ref_name }}.tar.gz release/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: linkedspark-${{ github.ref_name }}.tar.gz
+          files: outofoffice-${{ github.ref_name }}.tar.gz
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}

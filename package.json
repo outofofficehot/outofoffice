@@ -1,5 +1,5 @@
 {
-  "name": "linkedspark",
+  "name": "outofoffice",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "compile:contracts": "cd contracts/linked_spark && nargo compile",
-    "codegen": "aztec codegen contracts/linked_spark/target -o src/artifacts",
+    "compile:contracts": "cd contracts/out_of_office && nargo compile",
+    "codegen": "aztec codegen contracts/out_of_office/target -o src/artifacts",
     "sandbox": "aztec start --sandbox",
     "deploy:local": "ts-node scripts/deploy.ts",
     "deploy:alpha": "NETWORK=alpha ts-node scripts/deploy.ts"

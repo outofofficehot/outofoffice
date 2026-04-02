@@ -11,12 +11,30 @@ const globalStyles = `
   body {
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #0a0a0a;
     min-height: 100vh;
+    color: #fff;
   }
   
   #root {
-    padding: 20px;
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: #e94560;
+    color: #fff;
+  }
+
+  input::placeholder {
+    color: rgba(255,255,255,0.4);
+  }
+
+  a {
+    color: #e94560;
+  }
+
+  a:hover {
+    color: #ff6b6b;
   }
 `;
 
