@@ -1,7 +1,4 @@
-// LinkedIn URL parsing and hashing utilities
-
-import { Fr } from '@aztec/aztec.js';
-import { poseidon2Hash } from '@aztec/circuits.js';
+// LinkedIn URL parsing utilities
 
 /**
  * Extract LinkedIn username/ID from various URL formats
@@ -38,28 +35,6 @@ export function extractLinkedInId(input: string): string | null {
 }
 
 /**
- * Hash a LinkedIn ID for privacy
- * 
- * Uses Poseidon hash (ZK-friendly) to create a deterministic
- * but non-reversible hash of the LinkedIn ID
- */
-export function hashLinkedInId(linkedInId: string): Fr {
-  // Convert string to field elements
-  const encoder = new TextEncoder();
-  const bytes = encoder.encode(linkedInId.toLowerCase());
-  
-  // Pad to 31 bytes (max for a field element)
-  const padded = new Uint8Array(31);
-  padded.set(bytes.slice(0, 31));
-  
-  // Convert to field element
-  const field = Fr.fromBuffer(Buffer.from(padded));
-  
-  // Hash with Poseidon
-  return poseidon2Hash([field]);
-}
-
-/**
  * Validate a LinkedIn profile URL or username
  */
 export function isValidLinkedIn(input: string): boolean {
@@ -68,8 +43,8 @@ export function isValidLinkedIn(input: string): boolean {
 
 // LinkedIn OAuth configuration
 export const LINKEDIN_OAUTH_CONFIG = {
-  clientId: import.meta.env.VITE_LINKEDIN_CLIENT_ID || '',
-  redirectUri: import.meta.env.VITE_LINKEDIN_REDIRECT_URI || 'http://localhost:5173/callback',
+  clientId: (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_LINKEDIN_CLIENT_ID : '') || '',
+  redirectUri: (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_LINKEDIN_REDIRECT_URI : '') || 'http://localhost:5173/callback',
   scope: 'r_liteprofile r_emailaddress',
   authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
 };

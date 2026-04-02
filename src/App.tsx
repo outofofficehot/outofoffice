@@ -50,7 +50,6 @@ function MainApp({ onBackToLanding }: MainAppProps) {
     connect,
     signalInterest,
     checkMutual,
-    withdrawSignal,
     mySignals,
     myMatches,
   } = useAztec();
@@ -60,11 +59,10 @@ function MainApp({ onBackToLanding }: MainAppProps) {
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [tab, setTab] = useState<'signal' | 'matches' | 'history'>('signal');
 
-  // Connect on mount
+  // Auto-connect for demo
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      connect('sandbox');
-    }
+    // Auto-connect in dev mode
+    connect('sandbox');
   }, [connect]);
 
   const handleSignal = async () => {
