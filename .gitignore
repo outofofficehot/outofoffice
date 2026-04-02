@@ -4,6 +4,12 @@ dist/
 .env.local
 *.log
 
+# Unencrypted secrets (encrypted ones are OK)
+secrets/*.dec.*
+secrets/*.decrypted.*
+*.key
+*.pem
+
 # Aztec artifacts
 contracts/*/target/
 src/artifacts/
@@ -14,3 +20,4 @@ deployments/*.secret.json
 # IDE
 .vscode/
 .idea/
+.vercel
