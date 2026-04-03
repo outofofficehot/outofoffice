@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Landing from './pages/Landing';
 import { useAztec } from './hooks/useAztec';
 import { extractLinkedInId, isValidLinkedIn } from './utils/linkedin';
+import { brand, copy } from './brand';
 
-// Check if we should show app directly (e.g., /app route or returning user)
+// Check if we should show app directly
 const shouldShowApp = () => {
   if (typeof window === 'undefined') return false;
   return window.location.hash === '#app' || localStorage.getItem('ooo_visited') === 'true';
@@ -18,7 +19,6 @@ function App() {
     setShowApp(true);
   };
 
-  // Handle hash changes
   useEffect(() => {
     const handleHashChange = () => {
       setShowApp(window.location.hash === '#app');
@@ -59,75 +59,69 @@ function MainApp({ onBackToLanding }: MainAppProps) {
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [tab, setTab] = useState<'signal' | 'matches' | 'history'>('signal');
 
-  // Auto-connect for demo
   useEffect(() => {
-    // Auto-connect in dev mode
     connect('sandbox');
   }, [connect]);
 
   const handleSignal = async () => {
     if (!isValidLinkedIn(theirLinkedIn)) {
-      setStatus({ type: 'error', message: 'Please enter a valid LinkedIn profile URL or username' });
+      setStatus({ type: 'error', message: 'Please enter a valid LinkedIn URL or username' });
       return;
     }
 
     if (!myLinkedIn) {
-      setStatus({ type: 'error', message: 'Please enter your LinkedIn profile first' });
+      setStatus({ type: 'error', message: 'Enter your LinkedIn first' });
       return;
     }
 
     try {
-      setStatus({ type: 'info', message: 'Signaling interest privately...' });
+      setStatus({ type: 'info', message: 'Encrypting your signal...' });
       const txHash = await signalInterest(myLinkedIn, theirLinkedIn);
-      setStatus({ type: 'success', message: `Interest signaled! 🔒 TX: ${txHash.slice(0, 16)}...` });
+      setStatus({ type: 'success', message: `Signal sent privately. TX: ${txHash.slice(0, 12)}...` });
       setTheirLinkedIn('');
     } catch (err) {
       setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Failed to signal' });
     }
   };
 
-  const handleCheckMatch = async (theirLinkedInId: string) => {
+  const handleCheckMatch = async (theirHash: string) => {
     try {
-      setStatus({ type: 'info', message: 'Checking for mutual match...' });
-      const isMatch = await checkMutual(myLinkedIn, theirLinkedInId);
+      setStatus({ type: 'info', message: 'Checking for mutual interest...' });
+      const isMatch = await checkMutual(myLinkedIn, theirHash);
       if (isMatch) {
-        setStatus({ type: 'success', message: '🎉 It\'s a match! You both signaled each other!' });
+        setStatus({ type: 'success', message: 'It\'s mutual! You both signaled each other.' });
       } else {
-        setStatus({ type: 'info', message: 'No mutual match yet. If they signal you back, you\'ll both be notified.' });
+        setStatus({ type: 'info', message: 'No mutual match yet.' });
       }
     } catch (err) {
-      setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Failed to check' });
+      setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Check failed' });
     }
   };
 
+  // Not connected state
   if (!isConnected) {
     return (
       <div style={styles.container}>
-        <div style={styles.header}>
+        <header style={styles.header}>
           <button onClick={onBackToLanding} style={styles.backButton}>← Back</button>
-          <div style={styles.logo}>🏖️</div>
-          <h1 style={styles.title}>Out Of Office</h1>
-          <p style={styles.subtitle}>Private mutual interest signaling</p>
-        </div>
+          <img src="/assets/logo.png" alt="OOO" style={styles.headerLogo} />
+        </header>
 
         <div style={styles.card}>
-          <div style={{ ...styles.alert, ...styles.warning }}>
-            ⚠️ <strong>Alpha Network</strong>: Running on Aztec Alpha. 
-            Use test tokens only.
+          <div style={styles.alertInfo}>
+            🔒 Connect your wallet to signal privately
           </div>
 
           <button
-            style={{ ...styles.button, ...styles.primaryButton }}
+            style={{ ...styles.button, ...styles.buttonPrimary }}
             onClick={() => connect('sandbox')}
             disabled={isLoading}
           >
-            {isLoading ? 'Connecting...' : 'Connect Wallet'}
+            {isLoading ? 'Connecting...' : copy.cta.connect}
           </button>
 
           {error && (
-            <div style={{ ...styles.alert, ...styles.error, marginTop: '16px' }}>
-              {error}
-            </div>
+            <div style={styles.alertError}>{error}</div>
           )}
         </div>
       </div>
@@ -136,54 +130,51 @@ function MainApp({ onBackToLanding }: MainAppProps) {
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
+      <header style={styles.header}>
         <button onClick={onBackToLanding} style={styles.backButton}>← Back</button>
-        <div style={styles.logo}>🏖️</div>
-        <h1 style={styles.title}>Out Of Office</h1>
-        <p style={styles.subtitle}>
-          Connected • {myMatches.length} matches • {mySignals.length} signals
+        <img src="/assets/logo.png" alt="OOO" style={styles.headerLogo} />
+        <p style={styles.headerStatus}>
+          {myMatches.length} matches • {mySignals.length} signals
         </p>
-      </div>
+      </header>
 
-      {/* Tab navigation */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+      {/* Tabs */}
+      <div style={styles.tabs}>
         {(['signal', 'matches', 'history'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             style={{
-              ...styles.button,
-              ...(tab === t ? styles.primaryButton : styles.secondaryButton),
-              flex: 1,
+              ...styles.tab,
+              ...(tab === t ? styles.tabActive : {}),
             }}
           >
-            {t === 'signal' && '🏖️ Signal'}
-            {t === 'matches' && '🎉 Matches'}
-            {t === 'history' && '📜 History'}
+            {t === 'signal' && 'Signal'}
+            {t === 'matches' && 'Matches'}
+            {t === 'history' && 'History'}
           </button>
         ))}
       </div>
 
-      {/* Status message */}
+      {/* Status */}
       {status && (
-        <div
-          style={{
-            ...styles.alert,
-            ...(status.type === 'success' ? styles.success : status.type === 'error' ? styles.error : styles.warning),
-          }}
-        >
+        <div style={{
+          ...styles.alert,
+          ...(status.type === 'success' ? styles.alertSuccess : 
+              status.type === 'error' ? styles.alertError : styles.alertInfo),
+        }}>
           {status.message}
         </div>
       )}
 
-      {/* Signal tab */}
+      {/* Signal Tab */}
       {tab === 'signal' && (
         <div style={styles.card}>
-          <h2 style={{ marginTop: 0 }}>Signal Interest</h2>
+          <h2 style={styles.cardTitle}>Signal interest</h2>
           
           <input
             type="text"
-            placeholder="Your LinkedIn (linkedin.com/in/you)"
+            placeholder="Your LinkedIn URL"
             value={myLinkedIn}
             onChange={(e) => setMyLinkedIn(extractLinkedInId(e.target.value) || e.target.value)}
             style={styles.input}
@@ -191,7 +182,7 @@ function MainApp({ onBackToLanding }: MainAppProps) {
           
           <input
             type="text"
-            placeholder="Their LinkedIn (linkedin.com/in/them)"
+            placeholder="Their LinkedIn URL"
             value={theirLinkedIn}
             onChange={(e) => setTheirLinkedIn(e.target.value)}
             style={styles.input}
@@ -201,35 +192,35 @@ function MainApp({ onBackToLanding }: MainAppProps) {
             onClick={handleSignal}
             style={{
               ...styles.button,
-              ...styles.primaryButton,
-              ...(isLoading ? styles.disabledButton : {}),
+              ...styles.buttonPrimary,
+              ...(isLoading || !myLinkedIn || !theirLinkedIn ? styles.buttonDisabled : {}),
             }}
             disabled={isLoading || !myLinkedIn || !theirLinkedIn}
           >
-            🏖️ Signal Interest ($10 stake)
+            Signal Interest • $10 stake
           </button>
 
-          <p style={{ color: '#999', fontSize: '14px', marginTop: '16px', textAlign: 'center' }}>
-            Your signal is <strong>completely private</strong>. They won't know unless they signal you back.
+          <p style={styles.cardNote}>
+            Your signal is encrypted. They won't know unless it's mutual.
           </p>
         </div>
       )}
 
-      {/* Matches tab */}
+      {/* Matches Tab */}
       {tab === 'matches' && (
         <div style={styles.card}>
-          <h2 style={{ marginTop: 0 }}>🎉 Your Matches</h2>
+          <h2 style={styles.cardTitle}>Your matches</h2>
           
           {myMatches.length === 0 ? (
-            <p style={{ color: '#999', textAlign: 'center' }}>
-              No matches yet. When someone you've signaled signals you back, they'll appear here!
+            <p style={styles.emptyState}>
+              No matches yet. When someone you've signaled signals you back, you'll both find out here.
             </p>
           ) : (
-            <ul style={styles.signalList}>
+            <ul style={styles.list}>
               {myMatches.map((match, i) => (
-                <li key={i} style={styles.signalItem}>
+                <li key={i} style={styles.listItem}>
                   <span>Profile: {match.theirLinkedInHash.slice(0, 12)}...</span>
-                  <span style={styles.matchBadge}>MATCHED!</span>
+                  <span style={styles.matchBadge}>Mutual ✓</span>
                 </li>
               ))}
             </ul>
@@ -237,30 +228,32 @@ function MainApp({ onBackToLanding }: MainAppProps) {
         </div>
       )}
 
-      {/* History tab */}
+      {/* History Tab */}
       {tab === 'history' && (
         <div style={styles.card}>
-          <h2 style={{ marginTop: 0 }}>📜 Your Signals</h2>
+          <h2 style={styles.cardTitle}>Your signals</h2>
           
           {mySignals.length === 0 ? (
-            <p style={{ color: '#999', textAlign: 'center' }}>
-              No signals yet. Start by signaling someone!
+            <p style={styles.emptyState}>
+              No signals yet. Start by signaling someone.
             </p>
           ) : (
-            <ul style={styles.signalList}>
+            <ul style={styles.list}>
               {mySignals.map((signal, i) => (
-                <li key={i} style={styles.signalItem}>
+                <li key={i} style={styles.listItem}>
                   <div>
-                    <div>To: {signal.toLinkedInHash.slice(0, 12)}...</div>
-                    <div style={{ fontSize: '12px', color: '#999' }}>
+                    <div style={styles.listItemTitle}>
+                      {signal.toLinkedInHash.slice(0, 16)}...
+                    </div>
+                    <div style={styles.listItemDate}>
                       {new Date(signal.timestamp).toLocaleDateString()}
                     </div>
                   </div>
                   <button
                     onClick={() => handleCheckMatch(signal.toLinkedInHash)}
-                    style={{ ...styles.button, ...styles.secondaryButton, width: 'auto', padding: '8px 16px' }}
+                    style={styles.buttonSmall}
                   >
-                    Check Match
+                    Check
                   </button>
                 </li>
               ))}
@@ -269,15 +262,15 @@ function MainApp({ onBackToLanding }: MainAppProps) {
         </div>
       )}
 
-      {/* How it works */}
-      <div style={{ ...styles.card, background: '#1a1a2e' }}>
-        <h3 style={{ marginTop: 0 }}>How It Works</h3>
-        <ol style={{ paddingLeft: '20px', color: '#999' }}>
-          <li>Enter your LinkedIn and theirs</li>
-          <li>Stake $10 to signal interest</li>
-          <li>Your signal is <strong>encrypted</strong> — they can't see it</li>
-          <li>If they signal you back → <strong>both notified</strong></li>
-          <li>If not → <strong>nobody knows</strong> (withdraw stake after 30 days)</li>
+      {/* Info Card */}
+      <div style={styles.infoCard}>
+        <h3 style={styles.infoTitle}>How it works</h3>
+        <ol style={styles.infoList}>
+          <li>Enter both LinkedIn profiles</li>
+          <li>Stake $10 to signal</li>
+          <li>Your signal is encrypted</li>
+          <li>If mutual → both notified</li>
+          <li>If not → nobody knows</li>
         </ol>
       </div>
     </div>
@@ -290,121 +283,231 @@ function MainApp({ onBackToLanding }: MainAppProps) {
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
-    maxWidth: '600px',
+    minHeight: '100vh',
+    background: brand.colors.base,
+    padding: brand.spacing.xl,
+    fontFamily: brand.fonts.body,
+    maxWidth: '500px',
     margin: '0 auto',
-    padding: '20px',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
   },
+  
+  // Header
   header: {
-    textAlign: 'center',
-    marginBottom: '40px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginBottom: brand.spacing.xl,
+    position: 'relative',
   },
   backButton: {
     position: 'absolute',
-    left: '20px',
-    top: '20px',
-    background: 'rgba(255,255,255,0.1)',
-    border: 'none',
-    color: '#fff',
-    padding: '8px 16px',
-    borderRadius: '8px',
+    left: 0,
+    top: 0,
+    background: 'transparent',
+    border: `1px solid ${brand.colors.rust}`,
+    color: brand.colors.rust,
+    padding: `${brand.spacing.xs} ${brand.spacing.md}`,
+    borderRadius: brand.borderRadius.full,
+    fontSize: '14px',
     cursor: 'pointer',
+  },
+  headerLogo: {
+    height: '80px',
+    width: 'auto',
+    marginBottom: brand.spacing.sm,
+  },
+  headerStatus: {
+    fontSize: '14px',
+    color: brand.colors.textMuted,
+    margin: 0,
+  },
+
+  // Tabs
+  tabs: {
+    display: 'flex',
+    gap: brand.spacing.sm,
+    marginBottom: brand.spacing.lg,
+  },
+  tab: {
+    flex: 1,
+    padding: brand.spacing.md,
+    background: brand.colors.white,
+    border: `1px solid ${brand.colors.pinkDark}`,
+    borderRadius: brand.borderRadius.md,
+    fontFamily: brand.fonts.body,
+    fontWeight: 500,
+    fontSize: '14px',
+    color: brand.colors.textSecondary,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  tabActive: {
+    background: brand.colors.rust,
+    borderColor: brand.colors.rust,
+    color: brand.colors.white,
+  },
+
+  // Alerts
+  alert: {
+    padding: brand.spacing.md,
+    borderRadius: brand.borderRadius.md,
+    marginBottom: brand.spacing.lg,
     fontSize: '14px',
   },
-  logo: {
-    fontSize: '48px',
-    marginBottom: '10px',
+  alertInfo: {
+    background: brand.colors.pinkLight,
+    border: `1px solid ${brand.colors.pinkDark}`,
+    color: brand.colors.textPrimary,
+    padding: brand.spacing.md,
+    borderRadius: brand.borderRadius.md,
+    marginBottom: brand.spacing.lg,
+    fontSize: '14px',
   },
-  title: {
-    fontSize: '32px',
-    fontWeight: 'bold',
-    margin: '10px 0',
-    color: '#fff',
+  alertSuccess: {
+    background: '#E8F5E9',
+    border: '1px solid #C8E6C9',
+    color: '#2E7D32',
   },
-  subtitle: {
-    color: '#999',
-    fontSize: '16px',
+  alertError: {
+    background: '#FFEBEE',
+    border: '1px solid #FFCDD2',
+    color: brand.colors.rust,
+    padding: brand.spacing.md,
+    borderRadius: brand.borderRadius.md,
+    marginTop: brand.spacing.md,
+    fontSize: '14px',
   },
+
+  // Card
   card: {
-    background: '#16213e',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '20px',
-    border: '1px solid rgba(255,255,255,0.1)',
+    background: brand.colors.white,
+    borderRadius: brand.borderRadius.lg,
+    padding: brand.spacing.xl,
+    marginBottom: brand.spacing.lg,
+    boxShadow: brand.shadows.card,
   },
+  cardTitle: {
+    fontFamily: brand.fonts.display,
+    fontSize: '22px',
+    color: brand.colors.textPrimary,
+    margin: `0 0 ${brand.spacing.lg} 0`,
+    fontWeight: 400,
+  },
+  cardNote: {
+    fontSize: '13px',
+    color: brand.colors.textMuted,
+    textAlign: 'center',
+    marginTop: brand.spacing.md,
+    marginBottom: 0,
+  },
+
+  // Input
   input: {
     width: '100%',
-    padding: '12px 16px',
+    padding: brand.spacing.md,
     fontSize: '16px',
-    border: '1px solid rgba(255,255,255,0.2)',
-    borderRadius: '8px',
-    marginBottom: '16px',
+    border: `1px solid ${brand.colors.pinkDark}`,
+    borderRadius: brand.borderRadius.md,
+    marginBottom: brand.spacing.md,
     boxSizing: 'border-box',
-    background: 'rgba(255,255,255,0.05)',
-    color: '#fff',
+    fontFamily: brand.fonts.body,
+    background: brand.colors.pinkLight,
+    color: brand.colors.textPrimary,
+    outline: 'none',
   },
+
+  // Buttons
   button: {
     width: '100%',
-    padding: '14px 24px',
+    padding: brand.spacing.md,
     fontSize: '16px',
-    fontWeight: 'bold',
+    fontWeight: 600,
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: brand.borderRadius.full,
     cursor: 'pointer',
-    transition: 'background 0.2s',
+    fontFamily: brand.fonts.body,
+    transition: 'all 0.2s ease',
   },
-  primaryButton: {
-    background: 'linear-gradient(135deg, #e94560 0%, #ff6b6b 100%)',
-    color: 'white',
+  buttonPrimary: {
+    background: brand.gradients.button,
+    color: brand.colors.white,
+    boxShadow: brand.shadows.glow,
   },
-  secondaryButton: {
-    background: 'rgba(255,255,255,0.1)',
-    color: '#fff',
-  },
-  disabledButton: {
-    background: '#555',
+  buttonDisabled: {
+    opacity: 0.5,
     cursor: 'not-allowed',
+    boxShadow: 'none',
   },
-  alert: {
-    padding: '12px 16px',
-    borderRadius: '8px',
-    marginBottom: '16px',
+  buttonSmall: {
+    padding: `${brand.spacing.xs} ${brand.spacing.md}`,
+    fontSize: '13px',
+    fontWeight: 500,
+    border: `1px solid ${brand.colors.rust}`,
+    borderRadius: brand.borderRadius.full,
+    background: 'transparent',
+    color: brand.colors.rust,
+    cursor: 'pointer',
+    fontFamily: brand.fonts.body,
   },
-  warning: {
-    background: 'rgba(255, 193, 7, 0.1)',
-    border: '1px solid rgba(255, 193, 7, 0.3)',
-    color: '#ffc107',
-  },
-  success: {
-    background: 'rgba(16, 185, 129, 0.1)',
-    border: '1px solid rgba(16, 185, 129, 0.3)',
-    color: '#10b981',
-  },
-  error: {
-    background: 'rgba(239, 68, 68, 0.1)',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
-    color: '#ef4444',
-  },
-  signalList: {
+
+  // List
+  list: {
     listStyle: 'none',
     padding: 0,
     margin: 0,
   },
-  signalItem: {
+  listItem: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '12px',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
-    color: '#fff',
+    padding: brand.spacing.md,
+    borderBottom: `1px solid ${brand.colors.pinkDark}`,
+  },
+  listItemTitle: {
+    fontSize: '14px',
+    color: brand.colors.textPrimary,
+    fontFamily: 'monospace',
+  },
+  listItemDate: {
+    fontSize: '12px',
+    color: brand.colors.textMuted,
   },
   matchBadge: {
-    background: '#e94560',
-    color: 'white',
-    padding: '4px 12px',
-    borderRadius: '20px',
+    background: brand.colors.rust,
+    color: brand.colors.white,
+    padding: `${brand.spacing.xs} ${brand.spacing.md}`,
+    borderRadius: brand.borderRadius.full,
+    fontSize: '12px',
+    fontWeight: 600,
+  },
+  emptyState: {
+    color: brand.colors.textMuted,
+    textAlign: 'center',
+    padding: brand.spacing.lg,
     fontSize: '14px',
-    fontWeight: 'bold',
+    lineHeight: 1.6,
+  },
+
+  // Info Card
+  infoCard: {
+    background: brand.colors.pinkLight,
+    borderRadius: brand.borderRadius.lg,
+    padding: brand.spacing.lg,
+    border: `1px solid ${brand.colors.pinkDark}`,
+  },
+  infoTitle: {
+    fontFamily: brand.fonts.display,
+    fontSize: '16px',
+    color: brand.colors.textPrimary,
+    margin: `0 0 ${brand.spacing.md} 0`,
+    fontWeight: 400,
+  },
+  infoList: {
+    margin: 0,
+    paddingLeft: brand.spacing.lg,
+    color: brand.colors.textSecondary,
+    fontSize: '14px',
+    lineHeight: 1.8,
   },
 };
 

@@ -1,194 +1,98 @@
 import React from 'react';
+import { brand, copy } from '../brand';
 
 const Landing: React.FC<{ onLaunchApp: () => void }> = ({ onLaunchApp }) => {
   return (
     <div style={styles.container}>
+      {/* Navigation */}
+      <nav style={styles.nav}>
+        <img src="/assets/logo.png" alt="OOO" style={styles.navLogo} />
+        <button onClick={onLaunchApp} style={styles.navButton}>
+          {copy.cta.primary}
+        </button>
+      </nav>
+
       {/* Hero Section */}
       <header style={styles.hero}>
-        <nav style={styles.nav}>
-          <div style={styles.logo}>
-            <span style={styles.logoIcon}>🏖️</span>
-            <span style={styles.logoText}>OOO</span>
-          </div>
-          <button onClick={onLaunchApp} style={styles.navButton}>
-            Launch App
-          </button>
-        </nav>
-
-        <div style={styles.heroContent}>
-          <h1 style={styles.headline}>
-            Out Of Office
-          </h1>
-          <p style={styles.tagline}>
-            Private mutual interest signaling for the workplace.
-          </p>
-          <p style={styles.subtagline}>
-            When "let's grab coffee" means something more.
-          </p>
-          
-          <button onClick={onLaunchApp} style={styles.ctaButton}>
-            Signal Someone →
-          </button>
-          
-          <p style={styles.privacyNote}>
-            🔒 Built on Aztec Network • Zero-knowledge privacy
-          </p>
-        </div>
+        <img src="/assets/logo.png" alt="Out Of Office" style={styles.heroLogo} />
+        <p style={styles.tagline}>{copy.hero.tagline}</p>
+        <p style={styles.subline}>{copy.hero.subline}</p>
+        
+        <button onClick={onLaunchApp} style={styles.ctaButton}>
+          {copy.cta.primary}
+        </button>
+        
+        <p style={styles.trustBadge}>
+          🔒 End-to-end encrypted • Built on Aztec
+        </p>
       </header>
 
       {/* How It Works */}
       <section style={styles.section}>
-        <h2 style={styles.sectionTitle}>How It Works</h2>
+        <h2 style={styles.sectionTitle}>{copy.howItWorks.title}</h2>
         
-        <div style={styles.steps}>
-          <div style={styles.step}>
-            <div style={styles.stepNumber}>1</div>
-            <div style={styles.stepIcon}>🔗</div>
-            <h3 style={styles.stepTitle}>Paste Their LinkedIn</h3>
-            <p style={styles.stepDesc}>
-              Enter the LinkedIn profile of someone you're interested in.
-            </p>
-          </div>
-          
-          <div style={styles.step}>
-            <div style={styles.stepNumber}>2</div>
-            <div style={styles.stepIcon}>💰</div>
-            <h3 style={styles.stepTitle}>Stake $10</h3>
-            <p style={styles.stepDesc}>
-              Put skin in the game. Shows you're serious, prevents spam.
-            </p>
-          </div>
-          
-          <div style={styles.step}>
-            <div style={styles.stepNumber}>3</div>
-            <div style={styles.stepIcon}>🔒</div>
-            <h3 style={styles.stepTitle}>Signal Privately</h3>
-            <p style={styles.stepDesc}>
-              Your interest is encrypted. Only you can see your outgoing signals.
-            </p>
-          </div>
-          
-          <div style={styles.step}>
-            <div style={styles.stepNumber}>4</div>
-            <div style={styles.stepIcon}>✨</div>
-            <h3 style={styles.stepTitle}>Mutual = Match</h3>
-            <p style={styles.stepDesc}>
-              If they signal you back, you both get notified. If not, nobody knows.
-            </p>
-          </div>
+        <div style={styles.stepsGrid}>
+          {copy.howItWorks.steps.map((step, i) => (
+            <div key={i} style={styles.stepCard}>
+              <div style={styles.stepNumber}>{i + 1}</div>
+              <h3 style={styles.stepTitle}>{step.title}</h3>
+              <p style={styles.stepDesc}>{step.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* The Problem */}
+      {/* Features */}
       <section style={{ ...styles.section, ...styles.sectionAlt }}>
-        <h2 style={styles.sectionTitle}>The Problem</h2>
+        <h2 style={styles.sectionTitle}>{copy.features.title}</h2>
         
-        <div style={styles.problemGrid}>
-          <div style={styles.problemCard}>
-            <span style={styles.problemIcon}>😬</span>
-            <h3>Rejection Risk</h3>
-            <p>Expressing interest to a colleague can make work awkward forever.</p>
-          </div>
-          
-          <div style={styles.problemCard}>
-            <span style={styles.problemIcon}>⚖️</span>
-            <h3>Power Dynamics</h3>
-            <p>Seniority differences make it inappropriate to make the first move.</p>
-          </div>
-          
-          <div style={styles.problemCard}>
-            <span style={styles.problemIcon}>📋</span>
-            <h3>HR Policies</h3>
-            <p>Many companies discourage workplace relationships entirely.</p>
-          </div>
-          
-          <div style={styles.problemCard}>
-            <span style={styles.problemIcon}>🗣️</span>
-            <h3>Office Gossip</h3>
-            <p>Word gets around. Your interest becomes everyone's business.</p>
-          </div>
-        </div>
-        
-        <div style={styles.solution}>
-          <h3 style={styles.solutionTitle}>The Solution: Cryptographic Discretion</h3>
-          <p style={styles.solutionDesc}>
-            OOO uses <strong>zero-knowledge proofs</strong> to ensure your interest 
-            is mathematically hidden unless it's mutual. Not even we can see who 
-            you've signaled.
-          </p>
+        <div style={styles.featuresGrid}>
+          {copy.features.items.map((item, i) => (
+            <div key={i} style={styles.featureCard}>
+              <h3 style={styles.featureTitle}>{item.title}</h3>
+              <p style={styles.featureDesc}>{item.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Privacy Deep Dive */}
+      {/* Trust Section */}
       <section style={styles.section}>
-        <h2 style={styles.sectionTitle}>Privacy Guarantees</h2>
+        <h2 style={styles.sectionTitle}>{copy.trust.title}</h2>
         
-        <div style={styles.privacyGrid}>
-          <div style={styles.privacyItem}>
-            <span style={styles.checkmark}>✓</span>
-            <div>
-              <strong>Signal Privacy</strong>
-              <p>Your signal is a private encrypted note. Only you can decrypt it.</p>
+        <div style={styles.trustList}>
+          {copy.trust.points.map((point, i) => (
+            <div key={i} style={styles.trustItem}>
+              <span style={styles.checkmark}>✓</span>
+              <span>{point}</span>
             </div>
-          </div>
-          
-          <div style={styles.privacyItem}>
-            <span style={styles.checkmark}>✓</span>
-            <div>
-              <strong>Identity Hashing</strong>
-              <p>LinkedIn IDs are hashed before going on-chain. No raw profiles stored.</p>
-            </div>
-          </div>
-          
-          <div style={styles.privacyItem}>
-            <span style={styles.checkmark}>✓</span>
-            <div>
-              <strong>No Rejection Info</strong>
-              <p>If someone doesn't signal back, you learn absolutely nothing.</p>
-            </div>
-          </div>
-          
-          <div style={styles.privacyItem}>
-            <span style={styles.checkmark}>✓</span>
-            <div>
-              <strong>Stake Recovery</strong>
-              <p>No match after 30 days? Withdraw your stake. No questions asked.</p>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Final CTA */}
       <section style={styles.ctaSection}>
         <h2 style={styles.ctaTitle}>Ready to find out?</h2>
-        <p style={styles.ctaDesc}>
-          The only risk is not knowing.
-        </p>
+        <p style={styles.ctaSubtitle}>The only risk is not knowing.</p>
         <button onClick={onLaunchApp} style={styles.ctaButtonLarge}>
-          Launch App 🏖️
+          {copy.cta.primary}
         </button>
       </section>
 
       {/* Footer */}
       <footer style={styles.footer}>
-        <div style={styles.footerContent}>
-          <div style={styles.footerLogo}>
-            <span style={styles.logoIcon}>🏖️</span>
-            <span>Out Of Office</span>
-          </div>
-          <div style={styles.footerLinks}>
-            <a href="https://aztec.network" target="_blank" rel="noopener" style={styles.footerLink}>
-              Built on Aztec
-            </a>
-            <span style={styles.footerDivider}>•</span>
-            <a href="https://github.com" target="_blank" rel="noopener" style={styles.footerLink}>
-              GitHub
-            </a>
-          </div>
-          <p style={styles.footerNote}>
-            ⚠️ Alpha software. Use test tokens only.
-          </p>
+        <img src="/assets/logo.png" alt="OOO" style={styles.footerLogo} />
+        <p style={styles.footerTagline}>{copy.footer.tagline}</p>
+        <div style={styles.footerLinks}>
+          <a href="https://github.com/outofofficehot/outofoffice" style={styles.footerLink}>
+            GitHub
+          </a>
+          <span style={styles.footerDivider}>•</span>
+          <a href="https://aztec.network" style={styles.footerLink}>
+            Built on Aztec
+          </a>
         </div>
+        <p style={styles.footerNote}>Alpha • Use test funds only</p>
       </footer>
     </div>
   );
@@ -198,283 +102,268 @@ const Landing: React.FC<{ onLaunchApp: () => void }> = ({ onLaunchApp }) => {
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
     minHeight: '100vh',
-    background: '#0a0a0a',
-    color: '#ffffff',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
+    background: brand.colors.base,
+    color: brand.colors.textPrimary,
+    fontFamily: brand.fonts.body,
   },
   
-  // Hero
-  hero: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-  },
+  // Navigation
   nav: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '20px 40px',
+    padding: `${brand.spacing.md} ${brand.spacing.xl}`,
+    maxWidth: '1200px',
+    margin: '0 auto',
   },
-  logo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  logoIcon: {
-    fontSize: '32px',
-  },
-  logoText: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    letterSpacing: '2px',
+  navLogo: {
+    height: '40px',
+    width: 'auto',
   },
   navButton: {
-    background: 'rgba(255,255,255,0.1)',
-    border: '1px solid rgba(255,255,255,0.2)',
-    color: '#fff',
-    padding: '10px 24px',
-    borderRadius: '8px',
-    cursor: 'pointer',
+    background: 'transparent',
+    border: `2px solid ${brand.colors.rust}`,
+    color: brand.colors.rust,
+    padding: `${brand.spacing.sm} ${brand.spacing.lg}`,
+    borderRadius: brand.borderRadius.full,
+    fontFamily: brand.fonts.body,
+    fontWeight: 600,
     fontSize: '14px',
-    transition: 'all 0.2s',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
   },
-  heroContent: {
-    flex: 1,
+
+  // Hero
+  hero: {
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
     alignItems: 'center',
     textAlign: 'center',
-    padding: '40px',
+    padding: `${brand.spacing.xxxl} ${brand.spacing.xl}`,
+    maxWidth: '800px',
+    margin: '0 auto',
   },
-  headline: {
-    fontSize: 'clamp(48px, 10vw, 80px)',
-    fontWeight: 'bold',
-    margin: '0 0 20px 0',
-    background: 'linear-gradient(135deg, #fff 0%, #a0a0a0 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
+  heroLogo: {
+    width: 'min(400px, 80vw)',
+    height: 'auto',
+    marginBottom: brand.spacing.xl,
   },
   tagline: {
-    fontSize: 'clamp(18px, 3vw, 24px)',
-    color: '#e94560',
-    margin: '0 0 10px 0',
-    fontWeight: '500',
+    fontFamily: brand.fonts.display,
+    fontSize: 'clamp(20px, 4vw, 28px)',
+    color: brand.colors.rust,
+    margin: `0 0 ${brand.spacing.md} 0`,
+    fontWeight: 400,
   },
-  subtagline: {
+  subline: {
     fontSize: 'clamp(16px, 2.5vw, 20px)',
-    color: 'rgba(255,255,255,0.6)',
-    margin: '0 0 40px 0',
-    fontStyle: 'italic',
+    color: brand.colors.textSecondary,
+    margin: `0 0 ${brand.spacing.xl} 0`,
+    maxWidth: '500px',
+    lineHeight: 1.6,
   },
   ctaButton: {
-    background: 'linear-gradient(135deg, #e94560 0%, #ff6b6b 100%)',
+    background: brand.gradients.button,
     border: 'none',
-    color: '#fff',
-    padding: '16px 48px',
-    fontSize: '18px',
-    fontWeight: 'bold',
-    borderRadius: '12px',
+    color: brand.colors.white,
+    padding: `${brand.spacing.md} ${brand.spacing.xxl}`,
+    borderRadius: brand.borderRadius.full,
+    fontFamily: brand.fonts.body,
+    fontWeight: 600,
+    fontSize: '16px',
     cursor: 'pointer',
-    transition: 'transform 0.2s, box-shadow 0.2s',
-    boxShadow: '0 4px 20px rgba(233, 69, 96, 0.4)',
+    boxShadow: brand.shadows.glow,
+    transition: 'all 0.2s ease',
   },
-  privacyNote: {
-    marginTop: '30px',
+  trustBadge: {
+    marginTop: brand.spacing.xl,
     fontSize: '14px',
-    color: 'rgba(255,255,255,0.5)',
+    color: brand.colors.textMuted,
   },
 
   // Sections
   section: {
-    padding: '80px 40px',
-    maxWidth: '1200px',
+    padding: `${brand.spacing.xxxl} ${brand.spacing.xl}`,
+    maxWidth: '1000px',
     margin: '0 auto',
   },
   sectionAlt: {
-    background: 'rgba(255,255,255,0.02)',
+    background: brand.colors.pinkLight,
     maxWidth: '100%',
-    paddingLeft: '40px',
-    paddingRight: '40px',
+    borderRadius: 0,
   },
   sectionTitle: {
-    fontSize: '36px',
-    fontWeight: 'bold',
+    fontFamily: brand.fonts.display,
+    fontSize: 'clamp(28px, 5vw, 36px)',
+    color: brand.colors.textPrimary,
     textAlign: 'center',
-    marginBottom: '60px',
+    marginBottom: brand.spacing.xxl,
+    fontWeight: 400,
   },
 
   // Steps
-  steps: {
+  stepsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: '30px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: brand.spacing.lg,
   },
-  step: {
-    background: 'rgba(255,255,255,0.05)',
-    borderRadius: '16px',
-    padding: '30px',
+  stepCard: {
+    background: brand.colors.white,
+    borderRadius: brand.borderRadius.lg,
+    padding: brand.spacing.xl,
+    boxShadow: brand.shadows.card,
     textAlign: 'center',
     position: 'relative',
   },
   stepNumber: {
-    position: 'absolute',
-    top: '-15px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: '#e94560',
-    width: '30px',
-    height: '30px',
-    borderRadius: '50%',
+    width: '36px',
+    height: '36px',
+    background: brand.colors.rust,
+    color: brand.colors.white,
+    borderRadius: brand.borderRadius.full,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontWeight: 'bold',
-    fontSize: '14px',
-  },
-  stepIcon: {
-    fontSize: '48px',
-    marginBottom: '20px',
+    fontWeight: 700,
+    fontSize: '16px',
+    margin: '0 auto',
+    marginBottom: brand.spacing.md,
   },
   stepTitle: {
+    fontFamily: brand.fonts.display,
     fontSize: '18px',
-    fontWeight: 'bold',
-    marginBottom: '10px',
+    color: brand.colors.textPrimary,
+    marginBottom: brand.spacing.sm,
+    fontWeight: 400,
   },
   stepDesc: {
     fontSize: '14px',
-    color: 'rgba(255,255,255,0.6)',
-    lineHeight: '1.6',
+    color: brand.colors.textSecondary,
+    lineHeight: 1.6,
+    margin: 0,
   },
 
-  // Problem Grid
-  problemGrid: {
+  // Features
+  featuresGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: '20px',
-    maxWidth: '1000px',
-    margin: '0 auto 60px auto',
-  },
-  problemCard: {
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '12px',
-    padding: '24px',
-    textAlign: 'center',
-  },
-  problemIcon: {
-    fontSize: '36px',
-    display: 'block',
-    marginBottom: '15px',
-  },
-  solution: {
-    background: 'linear-gradient(135deg, rgba(233, 69, 96, 0.1) 0%, rgba(255, 107, 107, 0.1) 100%)',
-    border: '1px solid rgba(233, 69, 96, 0.3)',
-    borderRadius: '16px',
-    padding: '40px',
-    textAlign: 'center',
-    maxWidth: '800px',
-    margin: '0 auto',
-  },
-  solutionTitle: {
-    fontSize: '24px',
-    marginBottom: '15px',
-    color: '#e94560',
-  },
-  solutionDesc: {
-    fontSize: '16px',
-    color: 'rgba(255,255,255,0.8)',
-    lineHeight: '1.8',
-  },
-
-  // Privacy Grid
-  privacyGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '30px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: brand.spacing.lg,
     maxWidth: '900px',
     margin: '0 auto',
   },
-  privacyItem: {
+  featureCard: {
+    background: brand.colors.white,
+    borderRadius: brand.borderRadius.lg,
+    padding: brand.spacing.xl,
+    boxShadow: brand.shadows.card,
+  },
+  featureTitle: {
+    fontFamily: brand.fonts.display,
+    fontSize: '20px',
+    color: brand.colors.rust,
+    marginBottom: brand.spacing.sm,
+    fontWeight: 400,
+  },
+  featureDesc: {
+    fontSize: '15px',
+    color: brand.colors.textSecondary,
+    lineHeight: 1.6,
+    margin: 0,
+  },
+
+  // Trust
+  trustList: {
     display: 'flex',
-    gap: '15px',
-    alignItems: 'flex-start',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: brand.spacing.md,
+  },
+  trustItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: brand.spacing.md,
+    fontSize: '18px',
+    color: brand.colors.textPrimary,
   },
   checkmark: {
-    background: '#10b981',
-    color: '#fff',
     width: '28px',
     height: '28px',
-    borderRadius: '50%',
+    background: brand.colors.rust,
+    color: brand.colors.white,
+    borderRadius: brand.borderRadius.full,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
-    fontWeight: 'bold',
+    fontSize: '14px',
+    fontWeight: 700,
   },
 
   // CTA Section
   ctaSection: {
+    background: brand.gradients.subtle,
     textAlign: 'center',
-    padding: '100px 40px',
-    background: 'linear-gradient(135deg, #16213e 0%, #1a1a2e 100%)',
+    padding: `${brand.spacing.xxxl} ${brand.spacing.xl}`,
   },
   ctaTitle: {
-    fontSize: '42px',
-    fontWeight: 'bold',
-    marginBottom: '15px',
+    fontFamily: brand.fonts.display,
+    fontSize: 'clamp(32px, 6vw, 44px)',
+    color: brand.colors.textPrimary,
+    marginBottom: brand.spacing.md,
+    fontWeight: 400,
   },
-  ctaDesc: {
-    fontSize: '20px',
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: '40px',
+  ctaSubtitle: {
+    fontSize: '18px',
+    color: brand.colors.textSecondary,
+    marginBottom: brand.spacing.xl,
   },
   ctaButtonLarge: {
-    background: 'linear-gradient(135deg, #e94560 0%, #ff6b6b 100%)',
+    background: brand.gradients.button,
     border: 'none',
-    color: '#fff',
-    padding: '20px 60px',
-    fontSize: '20px',
-    fontWeight: 'bold',
-    borderRadius: '16px',
+    color: brand.colors.white,
+    padding: `${brand.spacing.lg} ${brand.spacing.xxxl}`,
+    borderRadius: brand.borderRadius.full,
+    fontFamily: brand.fonts.body,
+    fontWeight: 600,
+    fontSize: '18px',
     cursor: 'pointer',
-    boxShadow: '0 4px 30px rgba(233, 69, 96, 0.5)',
+    boxShadow: brand.shadows.glow,
+    transition: 'all 0.2s ease',
   },
 
   // Footer
   footer: {
-    borderTop: '1px solid rgba(255,255,255,0.1)',
-    padding: '40px',
-  },
-  footerContent: {
-    maxWidth: '1200px',
-    margin: '0 auto',
     textAlign: 'center',
+    padding: `${brand.spacing.xxl} ${brand.spacing.xl}`,
+    borderTop: `1px solid ${brand.colors.pinkDark}`,
   },
   footerLogo: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    fontSize: '18px',
-    marginBottom: '20px',
+    height: '48px',
+    width: 'auto',
+    marginBottom: brand.spacing.md,
+    opacity: 0.8,
+  },
+  footerTagline: {
+    fontFamily: brand.fonts.display,
+    fontSize: '16px',
+    color: brand.colors.textSecondary,
+    fontStyle: 'italic',
+    marginBottom: brand.spacing.md,
   },
   footerLinks: {
-    marginBottom: '20px',
+    marginBottom: brand.spacing.md,
   },
   footerLink: {
-    color: 'rgba(255,255,255,0.5)',
+    color: brand.colors.rust,
     textDecoration: 'none',
+    fontSize: '14px',
   },
   footerDivider: {
-    margin: '0 15px',
-    color: 'rgba(255,255,255,0.3)',
+    margin: `0 ${brand.spacing.md}`,
+    color: brand.colors.textMuted,
   },
   footerNote: {
     fontSize: '12px',
-    color: 'rgba(255,255,255,0.3)',
+    color: brand.colors.textMuted,
   },
 };
 
