@@ -103,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('Profile data received:', { sub: profileData.sub, name: profileData.name });
 
-    // Return sanitized profile data
+    // Return sanitized profile data + access token for connections search
     const profile = {
       id: profileData.sub, // LinkedIn member ID (OpenID subject)
       firstName: profileData.given_name || '',
@@ -112,7 +112,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       picture: profileData.picture || null,
     };
 
-    return res.status(200).json(profile);
+    return res.status(200).json({ 
+      profile,
+      // Include access token so frontend can search connections
+      // Note: In production, you might want to handle this server-side
+      accessToken,
+    });
   } catch (error) {
     console.error('LinkedIn OAuth error:', error);
     return res.status(500).json({ 

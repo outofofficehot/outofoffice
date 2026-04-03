@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Landing from './pages/Landing';
 import { useAztec } from './hooks/useAztec';
-import { useLinkedIn } from './hooks/useLinkedIn';
+import { useLinkedIn, LinkedInConnection } from './hooks/useLinkedIn';
 import { LinkedInButton } from './components/LinkedInButton';
+import { ConnectionSearch } from './components/ConnectionSearch';
 import { extractLinkedInId, isValidLinkedIn } from './utils/linkedin';
 import { brand, copy } from './brand';
 
@@ -68,9 +69,11 @@ function MainApp({ onBackToLanding }: MainAppProps) {
     error: linkedInError,
     connect: connectLinkedIn,
     disconnect: disconnectLinkedIn,
+    searchConnections,
+    connectionsAvailable,
   } = useLinkedIn();
 
-  const [theirLinkedIn, setTheirLinkedIn] = useState('');
+  const [selectedTarget, setSelectedTarget] = useState<LinkedInConnection | string | null>(null);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [tab, setTab] = useState<'signal' | 'matches' | 'history'>('signal');
 
@@ -85,20 +88,42 @@ function MainApp({ onBackToLanding }: MainAppProps) {
       return;
     }
 
-    if (!isValidLinkedIn(theirLinkedIn)) {
-      setStatus({ type: 'error', message: 'Enter a valid LinkedIn URL' });
+    if (!selectedTarget) {
+      setStatus({ type: 'error', message: 'Select someone to signal' });
       return;
+    }
+
+    // Get the target ID
+    let theirId: string;
+    if (typeof selectedTarget === 'string') {
+      // URL or username entered manually
+      const extracted = extractLinkedInId(selectedTarget);
+      if (!extracted && !isValidLinkedIn(selectedTarget)) {
+        setStatus({ type: 'error', message: 'Enter a valid LinkedIn URL' });
+        return;
+      }
+      theirId = extracted || selectedTarget;
+    } else {
+      // Selected from dropdown
+      theirId = selectedTarget.id;
     }
 
     try {
       setStatus({ type: 'info', message: 'Encrypting your signal...' });
-      const theirId = extractLinkedInId(theirLinkedIn) || theirLinkedIn;
       const txHash = await signalInterest(linkedInProfile.id, theirId);
       setStatus({ type: 'success', message: `Signal sent privately. TX: ${txHash.slice(0, 12)}...` });
-      setTheirLinkedIn('');
+      setSelectedTarget(null);
     } catch (err) {
       setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Failed to signal' });
     }
+  };
+
+  const handleTargetSelect = (target: LinkedInConnection | string) => {
+    setSelectedTarget(target);
+  };
+
+  const clearTarget = () => {
+    setSelectedTarget(null);
   };
 
   const handleCheckMatch = async (theirHash: string) => {
@@ -203,24 +228,44 @@ function MainApp({ onBackToLanding }: MainAppProps) {
             onDisconnect={disconnectLinkedIn}
           />
 
-          {/* Their LinkedIn */}
+          {/* Target Selection */}
           <label style={styles.label}>Who are you interested in?</label>
-          <input
-            type="text"
-            placeholder="Their LinkedIn URL"
-            value={theirLinkedIn}
-            onChange={(e) => setTheirLinkedIn(e.target.value)}
-            style={styles.input}
-          />
+          
+          {selectedTarget ? (
+            <div style={styles.selectedTarget}>
+              <div style={styles.selectedTargetInfo}>
+                {typeof selectedTarget === 'string' ? (
+                  <span style={styles.selectedTargetName}>{selectedTarget}</span>
+                ) : (
+                  <>
+                    {selectedTarget.picture && (
+                      <img src={selectedTarget.picture} alt="" style={styles.selectedTargetAvatar} />
+                    )}
+                    <span style={styles.selectedTargetName}>
+                      {selectedTarget.firstName} {selectedTarget.lastName}
+                    </span>
+                  </>
+                )}
+              </div>
+              <button onClick={clearTarget} style={styles.clearButton}>×</button>
+            </div>
+          ) : (
+            <ConnectionSearch
+              onSelect={handleTargetSelect}
+              searchConnections={searchConnections}
+              connectionsAvailable={connectionsAvailable}
+              placeholder={connectionsAvailable ? "Search connections or paste LinkedIn URL" : "Paste LinkedIn URL"}
+            />
+          )}
 
           <button
             onClick={handleSignal}
             style={{
               ...styles.button,
               ...styles.buttonPrimary,
-              ...(!isLinkedInConnected || !theirLinkedIn ? styles.buttonDisabled : {}),
+              ...(!isLinkedInConnected || !selectedTarget ? styles.buttonDisabled : {}),
             }}
-            disabled={!isLinkedInConnected || !theirLinkedIn || isLoading}
+            disabled={!isLinkedInConnected || !selectedTarget || isLoading}
           >
             Signal Interest • $10 stake
           </button>
@@ -542,6 +587,49 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: brand.colors.textSecondary,
     fontSize: '14px',
     lineHeight: 1.8,
+  },
+
+  // Selected Target
+  selectedTarget: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: brand.spacing.md,
+    background: brand.colors.pinkLight,
+    border: `1px solid ${brand.colors.pinkDark}`,
+    borderRadius: brand.borderRadius.md,
+    marginBottom: brand.spacing.md,
+  },
+  selectedTargetInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: brand.spacing.sm,
+  },
+  selectedTargetAvatar: {
+    width: '32px',
+    height: '32px',
+    borderRadius: brand.borderRadius.full,
+    objectFit: 'cover',
+  },
+  selectedTargetName: {
+    fontWeight: 500,
+    color: brand.colors.textPrimary,
+    fontSize: '14px',
+  },
+  clearButton: {
+    width: '28px',
+    height: '28px',
+    background: 'transparent',
+    border: `1px solid ${brand.colors.textMuted}`,
+    borderRadius: brand.borderRadius.full,
+    color: brand.colors.textMuted,
+    fontSize: '18px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+    lineHeight: 1,
   },
 };
 
