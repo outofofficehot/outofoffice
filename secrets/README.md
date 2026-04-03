@@ -61,6 +61,22 @@ GITHUB_TOKEN=$(./scripts/secrets.sh get github_token) git push
 |-----|-------------|
 | `github_token` | GitHub PAT for outofofficehot account |
 | `vercel_token` | Vercel deployment token |
+| `aztec_deployer_private_key` | Aztec contract deployer private key |
+| `aztec_deployer_address` | Deployer address (fund with ETH) |
+| `linkedin_client_id` | LinkedIn OAuth App Client ID |
+| `linkedin_client_secret` | LinkedIn OAuth App Client Secret |
+
+## LinkedIn OAuth Setup
+
+1. Go to https://developer.linkedin.com/
+2. Create a new app
+3. Add OAuth 2.0 redirect URL: `https://outofoffice.hot/callback`
+4. Request "Sign In with LinkedIn using OpenID Connect" product
+5. Get Client ID and Client Secret
+6. Add to secrets: `./scripts/secrets.sh edit`
+7. Set in Vercel:
+   - `VITE_LINKEDIN_CLIENT_ID` (public, for frontend)
+   - `LINKEDIN_CLIENT_SECRET` (server only)
 
 ## Security Notes
 

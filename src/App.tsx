@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import Landing from './pages/Landing';
 import { useAztec } from './hooks/useAztec';
+import { useLinkedIn } from './hooks/useLinkedIn';
+import { LinkedInButton } from './components/LinkedInButton';
 import { extractLinkedInId, isValidLinkedIn } from './utils/linkedin';
 import { brand, copy } from './brand';
 
 // Check if we should show app directly
 const shouldShowApp = () => {
   if (typeof window === 'undefined') return false;
-  return window.location.hash === '#app' || localStorage.getItem('ooo_visited') === 'true';
+  const hash = window.location.hash;
+  const search = window.location.search;
+  // Show app if: hash is #app, OR we have an OAuth callback code
+  return hash === '#app' || search.includes('code=') || localStorage.getItem('ooo_visited') === 'true';
 };
 
 function App() {
@@ -43,40 +48,52 @@ interface MainAppProps {
 }
 
 function MainApp({ onBackToLanding }: MainAppProps) {
+  // Aztec wallet
   const {
-    isConnected,
-    isLoading,
-    error,
-    connect,
+    isConnected: isWalletConnected,
+    isLoading: isWalletLoading,
+    error: walletError,
+    connect: connectWallet,
     signalInterest,
     checkMutual,
     mySignals,
     myMatches,
   } = useAztec();
 
-  const [myLinkedIn, setMyLinkedIn] = useState('');
+  // LinkedIn OAuth
+  const {
+    profile: linkedInProfile,
+    isConnected: isLinkedInConnected,
+    isLoading: isLinkedInLoading,
+    error: linkedInError,
+    connect: connectLinkedIn,
+    disconnect: disconnectLinkedIn,
+  } = useLinkedIn();
+
   const [theirLinkedIn, setTheirLinkedIn] = useState('');
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [tab, setTab] = useState<'signal' | 'matches' | 'history'>('signal');
 
+  // Auto-connect wallet
   useEffect(() => {
-    connect('sandbox');
-  }, [connect]);
+    connectWallet('sandbox');
+  }, [connectWallet]);
 
   const handleSignal = async () => {
-    if (!isValidLinkedIn(theirLinkedIn)) {
-      setStatus({ type: 'error', message: 'Please enter a valid LinkedIn URL or username' });
+    if (!isLinkedInConnected || !linkedInProfile) {
+      setStatus({ type: 'error', message: 'Connect your LinkedIn first' });
       return;
     }
 
-    if (!myLinkedIn) {
-      setStatus({ type: 'error', message: 'Enter your LinkedIn first' });
+    if (!isValidLinkedIn(theirLinkedIn)) {
+      setStatus({ type: 'error', message: 'Enter a valid LinkedIn URL' });
       return;
     }
 
     try {
       setStatus({ type: 'info', message: 'Encrypting your signal...' });
-      const txHash = await signalInterest(myLinkedIn, theirLinkedIn);
+      const theirId = extractLinkedInId(theirLinkedIn) || theirLinkedIn;
+      const txHash = await signalInterest(linkedInProfile.id, theirId);
       setStatus({ type: 'success', message: `Signal sent privately. TX: ${txHash.slice(0, 12)}...` });
       setTheirLinkedIn('');
     } catch (err) {
@@ -85,9 +102,11 @@ function MainApp({ onBackToLanding }: MainAppProps) {
   };
 
   const handleCheckMatch = async (theirHash: string) => {
+    if (!linkedInProfile) return;
+    
     try {
       setStatus({ type: 'info', message: 'Checking for mutual interest...' });
-      const isMatch = await checkMutual(myLinkedIn, theirHash);
+      const isMatch = await checkMutual(linkedInProfile.id, theirHash);
       if (isMatch) {
         setStatus({ type: 'success', message: 'It\'s mutual! You both signaled each other.' });
       } else {
@@ -98,8 +117,12 @@ function MainApp({ onBackToLanding }: MainAppProps) {
     }
   };
 
-  // Not connected state
-  if (!isConnected) {
+  // Combined loading/error state
+  const isLoading = isWalletLoading || isLinkedInLoading;
+  const error = walletError || linkedInError;
+
+  // Not fully connected state
+  if (!isWalletConnected) {
     return (
       <div style={styles.container}>
         <header style={styles.header}>
@@ -114,7 +137,7 @@ function MainApp({ onBackToLanding }: MainAppProps) {
 
           <button
             style={{ ...styles.button, ...styles.buttonPrimary }}
-            onClick={() => connect('sandbox')}
+            onClick={() => connectWallet('sandbox')}
             disabled={isLoading}
           >
             {isLoading ? 'Connecting...' : copy.cta.connect}
@@ -172,14 +195,16 @@ function MainApp({ onBackToLanding }: MainAppProps) {
         <div style={styles.card}>
           <h2 style={styles.cardTitle}>Signal interest</h2>
           
-          <input
-            type="text"
-            placeholder="Your LinkedIn URL"
-            value={myLinkedIn}
-            onChange={(e) => setMyLinkedIn(extractLinkedInId(e.target.value) || e.target.value)}
-            style={styles.input}
+          {/* LinkedIn Connection */}
+          <LinkedInButton
+            profile={linkedInProfile}
+            isLoading={isLinkedInLoading}
+            onConnect={connectLinkedIn}
+            onDisconnect={disconnectLinkedIn}
           />
-          
+
+          {/* Their LinkedIn */}
+          <label style={styles.label}>Who are you interested in?</label>
           <input
             type="text"
             placeholder="Their LinkedIn URL"
@@ -193,9 +218,9 @@ function MainApp({ onBackToLanding }: MainAppProps) {
             style={{
               ...styles.button,
               ...styles.buttonPrimary,
-              ...(isLoading || !myLinkedIn || !theirLinkedIn ? styles.buttonDisabled : {}),
+              ...(!isLinkedInConnected || !theirLinkedIn ? styles.buttonDisabled : {}),
             }}
-            disabled={isLoading || !myLinkedIn || !theirLinkedIn}
+            disabled={!isLinkedInConnected || !theirLinkedIn || isLoading}
           >
             Signal Interest • $10 stake
           </button>
@@ -266,9 +291,9 @@ function MainApp({ onBackToLanding }: MainAppProps) {
       <div style={styles.infoCard}>
         <h3 style={styles.infoTitle}>How it works</h3>
         <ol style={styles.infoList}>
-          <li>Enter both LinkedIn profiles</li>
+          <li>Connect your LinkedIn</li>
+          <li>Enter their profile URL</li>
           <li>Stake $10 to signal</li>
-          <li>Your signal is encrypted</li>
           <li>If mutual → both notified</li>
           <li>If not → nobody knows</li>
         </ol>
@@ -399,6 +424,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     textAlign: 'center',
     marginTop: brand.spacing.md,
     marginBottom: 0,
+  },
+
+  // Label
+  label: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: 500,
+    color: brand.colors.textPrimary,
+    marginBottom: brand.spacing.sm,
   },
 
   // Input
