@@ -50,13 +50,26 @@ export function useLinkedIn(): UseLinkedInReturn {
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
       const state = params.get('state');
+      const errorParam = params.get('error');
+      const errorDesc = params.get('error_description');
       const storedState = sessionStorage.getItem('ooo_oauth_state');
+
+      // Handle LinkedIn error response
+      if (errorParam) {
+        setError(`LinkedIn error: ${errorDesc || errorParam}`);
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname + '#app');
+        sessionStorage.removeItem('ooo_oauth_state');
+        return;
+      }
 
       if (code && state && state === storedState) {
         setIsLoading(true);
         setError(null);
         
         try {
+          console.log('Exchanging code for profile...', { redirectUri: REDIRECT_URI });
+          
           // Exchange code for profile via our API
           const response = await fetch('/api/linkedin/callback', {
             method: 'POST',
@@ -64,17 +77,20 @@ export function useLinkedIn(): UseLinkedInReturn {
             body: JSON.stringify({ code, redirectUri: REDIRECT_URI }),
           });
 
+          const data = await response.json();
+          console.log('API response:', response.status, data);
+
           if (!response.ok) {
-            throw new Error('Failed to authenticate with LinkedIn');
+            throw new Error(data.error || data.details || 'Failed to authenticate with LinkedIn');
           }
 
-          const profileData = await response.json();
-          setProfile(profileData);
-          localStorage.setItem('ooo_linkedin_profile', JSON.stringify(profileData));
+          setProfile(data);
+          localStorage.setItem('ooo_linkedin_profile', JSON.stringify(data));
           
           // Clean up URL
           window.history.replaceState({}, '', window.location.pathname + '#app');
         } catch (err) {
+          console.error('LinkedIn auth error:', err);
           setError(err instanceof Error ? err.message : 'Authentication failed');
         } finally {
           setIsLoading(false);
@@ -104,12 +120,14 @@ export function useLinkedIn(): UseLinkedInReturn {
     authUrl.searchParams.set('scope', SCOPES);
     authUrl.searchParams.set('state', state);
 
+    console.log('Redirecting to LinkedIn:', authUrl.toString());
     window.location.href = authUrl.toString();
   }, []);
 
   // Disconnect
   const disconnect = useCallback(() => {
     setProfile(null);
+    setError(null);
     localStorage.removeItem('ooo_linkedin_profile');
   }, []);
 
