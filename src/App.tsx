@@ -1,34 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import Landing from './pages/Landing';
+import { MatchReveal } from './components/MatchReveal';
+import { EmptyState } from './components/EmptyStates';
 import { useAztec } from './hooks/useAztec';
 import { useLinkedIn, LinkedInConnection } from './hooks/useLinkedIn';
 import { LinkedInButton } from './components/LinkedInButton';
 import { ConnectionSearch } from './components/ConnectionSearch';
 import { extractLinkedInId, isValidLinkedIn } from './utils/linkedin';
-import { brand, copy } from './brand';
-
-// Check if we should show app directly
-const shouldShowApp = () => {
-  if (typeof window === 'undefined') return false;
-  const hash = window.location.hash;
-  const search = window.location.search;
-  // Show app if: hash is #app, OR we have an OAuth callback code
-  return hash === '#app' || search.includes('code=') || localStorage.getItem('ooo_visited') === 'true';
-};
+import { brand } from './brand';
 
 function App() {
-  const [showApp, setShowApp] = useState(shouldShowApp);
+  const [showApp, setShowApp] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.location.hash === '#app' || 
+           window.location.search.includes('code=') || 
+           localStorage.getItem('ooo_visited') === 'true';
+  });
   
   const handleLaunchApp = () => {
     localStorage.setItem('ooo_visited', 'true');
-    window.location.hash = 'app';
+    window.location.hash = '#app';
     setShowApp(true);
   };
 
   useEffect(() => {
-    const handleHashChange = () => {
-      setShowApp(window.location.hash === '#app');
-    };
+    const handleHashChange = () => setShowApp(window.location.hash === '#app');
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -41,7 +37,7 @@ function App() {
 }
 
 // ============================================
-// Main Application
+// Main App - Mobile First Design
 // ============================================
 
 interface MainAppProps {
@@ -49,7 +45,6 @@ interface MainAppProps {
 }
 
 function MainApp({ onBackToLanding }: MainAppProps) {
-  // Aztec wallet
   const {
     isConnected: isWalletConnected,
     isLoading: isWalletLoading,
@@ -61,7 +56,6 @@ function MainApp({ onBackToLanding }: MainAppProps) {
     myMatches,
   } = useAztec();
 
-  // LinkedIn OAuth
   const {
     profile: linkedInProfile,
     isConnected: isLinkedInConnected,
@@ -73,30 +67,46 @@ function MainApp({ onBackToLanding }: MainAppProps) {
     connectionsAvailable,
   } = useLinkedIn();
 
+  const [tab, setTab] = useState<'signal' | 'matches' | 'you'>('signal');
   const [selectedTarget, setSelectedTarget] = useState<LinkedInConnection | string | null>(null);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-  const [tab, setTab] = useState<'signal' | 'matches' | 'history'>('signal');
+  const [showMatchReveal, setShowMatchReveal] = useState(false);
+  const [revealedMatch, setRevealedMatch] = useState<any>(null);
 
-  // Auto-connect wallet
   useEffect(() => {
     connectWallet('sandbox');
   }, [connectWallet]);
+
+  // Handle new match - trigger reveal animation
+  useEffect(() => {
+    if (myMatches.length > 0) {
+      const latestMatch = myMatches[myMatches.length - 1];
+      // Check if this is a new match (not already revealed)
+      const revealedMatches = JSON.parse(localStorage.getItem('ooo_revealed_matches') || '[]');
+      if (!revealedMatches.includes(latestMatch.theirLinkedInHash)) {
+        setRevealedMatch({
+          firstName: 'Someone',
+          lastName: 'Special',
+          profileUrl: `https://linkedin.com/in/${latestMatch.theirLinkedInHash}`,
+        });
+        setShowMatchReveal(true);
+        localStorage.setItem('ooo_revealed_matches', JSON.stringify([...revealedMatches, latestMatch.theirLinkedInHash]));
+      }
+    }
+  }, [myMatches]);
 
   const handleSignal = async () => {
     if (!isLinkedInConnected || !linkedInProfile) {
       setStatus({ type: 'error', message: 'Connect your LinkedIn first' });
       return;
     }
-
     if (!selectedTarget) {
       setStatus({ type: 'error', message: 'Select someone to signal' });
       return;
     }
 
-    // Get the target ID
     let theirId: string;
     if (typeof selectedTarget === 'string') {
-      // URL or username entered manually
       const extracted = extractLinkedInId(selectedTarget);
       if (!extracted && !isValidLinkedIn(selectedTarget)) {
         setStatus({ type: 'error', message: 'Enter a valid LinkedIn URL' });
@@ -104,429 +114,377 @@ function MainApp({ onBackToLanding }: MainAppProps) {
       }
       theirId = extracted || selectedTarget;
     } else {
-      // Selected from dropdown
       theirId = selectedTarget.id;
     }
 
     try {
       setStatus({ type: 'info', message: 'Encrypting your signal...' });
       const txHash = await signalInterest(linkedInProfile.id, theirId);
-      setStatus({ type: 'success', message: `Signal sent privately. TX: ${txHash.slice(0, 12)}...` });
+      setStatus({ type: 'success', message: 'Signal sent! 🔒' });
       setSelectedTarget(null);
     } catch (err) {
-      setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Failed to signal' });
+      setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Failed' });
     }
-  };
-
-  const handleTargetSelect = (target: LinkedInConnection | string) => {
-    setSelectedTarget(target);
-  };
-
-  const clearTarget = () => {
-    setSelectedTarget(null);
   };
 
   const handleCheckMatch = async (theirHash: string) => {
     if (!linkedInProfile) return;
-    
     try {
-      setStatus({ type: 'info', message: 'Checking for mutual interest...' });
+      setStatus({ type: 'info', message: 'Checking...' });
       const isMatch = await checkMutual(linkedInProfile.id, theirHash);
       if (isMatch) {
-        setStatus({ type: 'success', message: 'It\'s mutual! You both signaled each other.' });
+        setStatus({ type: 'success', message: "It's mutual! 💕" });
       } else {
-        setStatus({ type: 'info', message: 'No mutual match yet.' });
+        setStatus({ type: 'info', message: 'No match yet' });
       }
     } catch (err) {
-      setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Check failed' });
+      setStatus({ type: 'error', message: 'Check failed' });
     }
   };
 
-  // Combined loading/error state
   const isLoading = isWalletLoading || isLinkedInLoading;
   const error = walletError || linkedInError;
 
-  // Not fully connected state
-  if (!isWalletConnected) {
+  // Match reveal overlay
+  if (showMatchReveal && revealedMatch) {
     return (
-      <div style={styles.container}>
-        <header style={styles.header}>
-          <button onClick={onBackToLanding} style={styles.backButton}>← Back</button>
-          <img src="/assets/logo.png" alt="OOO" style={styles.headerLogo} />
-        </header>
-
-        <div style={styles.card}>
-          <div style={styles.alertInfo}>
-            🔒 Connect your wallet to signal privately
-          </div>
-
-          <button
-            style={{ ...styles.button, ...styles.buttonPrimary }}
-            onClick={() => connectWallet('sandbox')}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Connecting...' : copy.cta.connect}
-          </button>
-
-          {error && (
-            <div style={styles.alertError}>{error}</div>
-          )}
-        </div>
-      </div>
+      <MatchReveal
+        match={revealedMatch}
+        onClose={() => setShowMatchReveal(false)}
+        onMessage={() => {
+          window.open(revealedMatch.profileUrl, '_blank');
+          setShowMatchReveal(false);
+        }}
+      />
     );
   }
 
   return (
     <div style={styles.container}>
+      {/* Header */}
       <header style={styles.header}>
-        <button onClick={onBackToLanding} style={styles.backButton}>← Back</button>
-        <img src="/assets/logo.png" alt="OOO" style={styles.headerLogo} />
-        <p style={styles.headerStatus}>
-          {myMatches.length} matches • {mySignals.length} signals
-        </p>
+        <button onClick={onBackToLanding} style={styles.backBtn}>←</button>
+        <img src="/assets/logo.png" alt="OOO" style={styles.logo} />
+        <div style={styles.headerSpacer} />
       </header>
 
-      {/* Tabs */}
-      <div style={styles.tabs}>
-        {(['signal', 'matches', 'history'] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              ...styles.tab,
-              ...(tab === t ? styles.tabActive : {}),
-            }}
-          >
-            {t === 'signal' && 'Signal'}
-            {t === 'matches' && 'Matches'}
-            {t === 'history' && 'History'}
-          </button>
-        ))}
-      </div>
-
-      {/* Status */}
+      {/* Status toast */}
       {status && (
         <div style={{
-          ...styles.alert,
-          ...(status.type === 'success' ? styles.alertSuccess : 
-              status.type === 'error' ? styles.alertError : styles.alertInfo),
+          ...styles.toast,
+          background: status.type === 'success' ? '#E8F5E9' : 
+                      status.type === 'error' ? '#FFEBEE' : brand.colors.pinkLight,
+          color: status.type === 'success' ? '#2E7D32' : 
+                 status.type === 'error' ? brand.colors.rust : brand.colors.textPrimary,
         }}>
           {status.message}
+          <button onClick={() => setStatus(null)} style={styles.toastClose}>×</button>
         </div>
       )}
 
-      {/* Signal Tab */}
-      {tab === 'signal' && (
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Signal interest</h2>
-          
-          {/* LinkedIn Connection */}
-          <LinkedInButton
-            profile={linkedInProfile}
-            isLoading={isLinkedInLoading}
-            onConnect={connectLinkedIn}
-            onDisconnect={disconnectLinkedIn}
-          />
+      {/* Main content */}
+      <main style={styles.main}>
+        {/* Signal Tab */}
+        {tab === 'signal' && (
+          <div style={styles.tabContent}>
+            <div style={styles.card}>
+              <h2 style={styles.cardTitle}>Signal someone</h2>
+              
+              <LinkedInButton
+                profile={linkedInProfile}
+                isLoading={isLinkedInLoading}
+                onConnect={connectLinkedIn}
+                onDisconnect={disconnectLinkedIn}
+              />
 
-          {/* Target Selection */}
-          <label style={styles.label}>Who are you interested in?</label>
-          
-          {selectedTarget ? (
-            <div style={styles.selectedTarget}>
-              <div style={styles.selectedTargetInfo}>
-                {typeof selectedTarget === 'string' ? (
-                  <span style={styles.selectedTargetName}>{selectedTarget}</span>
-                ) : (
-                  <>
-                    {selectedTarget.picture && (
-                      <img src={selectedTarget.picture} alt="" style={styles.selectedTargetAvatar} />
-                    )}
-                    <span style={styles.selectedTargetName}>
-                      {selectedTarget.firstName} {selectedTarget.lastName}
-                    </span>
-                  </>
-                )}
-              </div>
-              <button onClick={clearTarget} style={styles.clearButton}>×</button>
-            </div>
-          ) : (
-            <ConnectionSearch
-              onSelect={handleTargetSelect}
-              searchConnections={searchConnections}
-              connectionsAvailable={connectionsAvailable}
-              placeholder={connectionsAvailable ? "Search connections or paste LinkedIn URL" : "Paste LinkedIn URL"}
-            />
-          )}
-
-          <button
-            onClick={handleSignal}
-            style={{
-              ...styles.button,
-              ...styles.buttonPrimary,
-              ...(!isLinkedInConnected || !selectedTarget ? styles.buttonDisabled : {}),
-            }}
-            disabled={!isLinkedInConnected || !selectedTarget || isLoading}
-          >
-            Signal Interest • $10 stake
-          </button>
-
-          <p style={styles.cardNote}>
-            Your signal is encrypted. They won't know unless it's mutual.
-          </p>
-        </div>
-      )}
-
-      {/* Matches Tab */}
-      {tab === 'matches' && (
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Your matches</h2>
-          
-          {myMatches.length === 0 ? (
-            <p style={styles.emptyState}>
-              No matches yet. When someone you've signaled signals you back, you'll both find out here.
-            </p>
-          ) : (
-            <ul style={styles.list}>
-              {myMatches.map((match, i) => (
-                <li key={i} style={styles.listItem}>
-                  <span>Profile: {match.theirLinkedInHash.slice(0, 12)}...</span>
-                  <span style={styles.matchBadge}>Mutual ✓</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {/* History Tab */}
-      {tab === 'history' && (
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Your signals</h2>
-          
-          {mySignals.length === 0 ? (
-            <p style={styles.emptyState}>
-              No signals yet. Start by signaling someone.
-            </p>
-          ) : (
-            <ul style={styles.list}>
-              {mySignals.map((signal, i) => (
-                <li key={i} style={styles.listItem}>
-                  <div>
-                    <div style={styles.listItemTitle}>
-                      {signal.toLinkedInHash.slice(0, 16)}...
+              {isLinkedInConnected && (
+                <>
+                  <label style={styles.label}>Who are you interested in?</label>
+                  
+                  {selectedTarget ? (
+                    <div style={styles.selectedTarget}>
+                      <span style={styles.selectedName}>
+                        {typeof selectedTarget === 'string' 
+                          ? selectedTarget 
+                          : `${selectedTarget.firstName} ${selectedTarget.lastName}`}
+                      </span>
+                      <button onClick={() => setSelectedTarget(null)} style={styles.clearBtn}>×</button>
                     </div>
-                    <div style={styles.listItemDate}>
-                      {new Date(signal.timestamp).toLocaleDateString()}
-                    </div>
-                  </div>
+                  ) : (
+                    <ConnectionSearch
+                      onSelect={setSelectedTarget}
+                      searchConnections={searchConnections}
+                      connectionsAvailable={connectionsAvailable}
+                      placeholder="Paste LinkedIn URL"
+                    />
+                  )}
+
                   <button
-                    onClick={() => handleCheckMatch(signal.toLinkedInHash)}
-                    style={styles.buttonSmall}
+                    onClick={handleSignal}
+                    disabled={!selectedTarget || isLoading}
+                    style={{
+                      ...styles.primaryBtn,
+                      ...(!selectedTarget ? styles.btnDisabled : {}),
+                    }}
                   >
-                    Check
+                    Signal Interest • $10
                   </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+                </>
+              )}
+            </div>
 
-      {/* Info Card */}
-      <div style={styles.infoCard}>
-        <h3 style={styles.infoTitle}>How it works</h3>
-        <ol style={styles.infoList}>
-          <li>Connect your LinkedIn</li>
-          <li>Enter their profile URL</li>
-          <li>Stake $10 to signal</li>
-          <li>If mutual → both notified</li>
-          <li>If not → nobody knows</li>
-        </ol>
-      </div>
+            <p style={styles.hint}>
+              They'll never know unless they signal you back.
+            </p>
+          </div>
+        )}
+
+        {/* Matches Tab */}
+        {tab === 'matches' && (
+          <div style={styles.tabContent}>
+            {myMatches.length === 0 ? (
+              <EmptyState
+                type="no-matches"
+                onAction={() => setTab('signal')}
+                actionLabel="Signal someone"
+              />
+            ) : (
+              <div style={styles.card}>
+                <h2 style={styles.cardTitle}>Your matches</h2>
+                <ul style={styles.list}>
+                  {myMatches.map((match, i) => (
+                    <li key={i} style={styles.listItem}>
+                      <span style={styles.listText}>{match.theirLinkedInHash.slice(0, 12)}...</span>
+                      <span style={styles.matchBadge}>Match! 💕</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* You Tab (History + Profile) */}
+        {tab === 'you' && (
+          <div style={styles.tabContent}>
+            {mySignals.length === 0 ? (
+              <EmptyState
+                type="no-signals"
+                onAction={() => setTab('signal')}
+                actionLabel="Send your first signal"
+              />
+            ) : (
+              <div style={styles.card}>
+                <h2 style={styles.cardTitle}>Your signals</h2>
+                <ul style={styles.list}>
+                  {mySignals.map((signal, i) => (
+                    <li key={i} style={styles.listItem}>
+                      <div>
+                        <div style={styles.listText}>{signal.toLinkedInHash.slice(0, 16)}...</div>
+                        <div style={styles.listDate}>
+                          {new Date(signal.timestamp).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <button onClick={() => handleCheckMatch(signal.toLinkedInHash)} style={styles.smallBtn}>
+                        Check
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Bottom Navigation - Mobile Pattern */}
+      <nav style={styles.bottomNav}>
+        <button 
+          onClick={() => setTab('signal')} 
+          style={{...styles.navItem, ...(tab === 'signal' ? styles.navItemActive : {})}}
+        >
+          <span style={styles.navIcon}>💫</span>
+          <span style={styles.navLabel}>Signal</span>
+        </button>
+        <button 
+          onClick={() => setTab('matches')} 
+          style={{...styles.navItem, ...(tab === 'matches' ? styles.navItemActive : {})}}
+        >
+          <span style={styles.navIcon}>💕</span>
+          <span style={styles.navLabel}>Matches</span>
+          {myMatches.length > 0 && <span style={styles.navBadge}>{myMatches.length}</span>}
+        </button>
+        <button 
+          onClick={() => setTab('you')} 
+          style={{...styles.navItem, ...(tab === 'you' ? styles.navItemActive : {})}}
+        >
+          <span style={styles.navIcon}>👤</span>
+          <span style={styles.navLabel}>You</span>
+        </button>
+      </nav>
     </div>
   );
 }
 
 // ============================================
-// Styles
+// Mobile-First Styles
 // ============================================
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
-    minHeight: '100vh',
+    minHeight: '100dvh', // Falls back to 100vh in older browsers
+    display: 'flex',
+    flexDirection: 'column',
     background: brand.colors.base,
-    padding: brand.spacing.xl,
     fontFamily: brand.fonts.body,
-    maxWidth: '500px',
-    margin: '0 auto',
   },
-  
+
   // Header
   header: {
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: brand.spacing.xl,
-    position: 'relative',
+    justifyContent: 'space-between',
+    padding: brand.spacing.md,
+    paddingTop: `max(${brand.spacing.md}, env(safe-area-inset-top))`,
   },
-  backButton: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
+  backBtn: {
+    width: '40px',
+    height: '40px',
     background: 'transparent',
-    border: `1px solid ${brand.colors.rust}`,
-    color: brand.colors.rust,
-    padding: `${brand.spacing.xs} ${brand.spacing.md}`,
+    border: `1px solid ${brand.colors.pinkDark}`,
     borderRadius: brand.borderRadius.full,
-    fontSize: '14px',
-    cursor: 'pointer',
-  },
-  headerLogo: {
-    height: '80px',
-    width: 'auto',
-    marginBottom: brand.spacing.sm,
-  },
-  headerStatus: {
-    fontSize: '14px',
-    color: brand.colors.textMuted,
-    margin: 0,
-  },
-
-  // Tabs
-  tabs: {
-    display: 'flex',
-    gap: brand.spacing.sm,
-    marginBottom: brand.spacing.lg,
-  },
-  tab: {
-    flex: 1,
-    padding: brand.spacing.md,
-    background: brand.colors.white,
-    border: `1px solid ${brand.colors.pinkDark}`,
-    borderRadius: brand.borderRadius.md,
-    fontFamily: brand.fonts.body,
-    fontWeight: 500,
-    fontSize: '14px',
-    color: brand.colors.textSecondary,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  tabActive: {
-    background: brand.colors.rust,
-    borderColor: brand.colors.rust,
-    color: brand.colors.white,
-  },
-
-  // Alerts
-  alert: {
-    padding: brand.spacing.md,
-    borderRadius: brand.borderRadius.md,
-    marginBottom: brand.spacing.lg,
-    fontSize: '14px',
-  },
-  alertInfo: {
-    background: brand.colors.pinkLight,
-    border: `1px solid ${brand.colors.pinkDark}`,
-    color: brand.colors.textPrimary,
-    padding: brand.spacing.md,
-    borderRadius: brand.borderRadius.md,
-    marginBottom: brand.spacing.lg,
-    fontSize: '14px',
-  },
-  alertSuccess: {
-    background: '#E8F5E9',
-    border: '1px solid #C8E6C9',
-    color: '#2E7D32',
-  },
-  alertError: {
-    background: '#FFEBEE',
-    border: '1px solid #FFCDD2',
     color: brand.colors.rust,
+    fontSize: '18px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    height: '36px',
+    width: 'auto',
+  },
+  headerSpacer: {
+    width: '40px',
+  },
+
+  // Toast
+  toast: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    margin: `0 ${brand.spacing.md}`,
     padding: brand.spacing.md,
     borderRadius: brand.borderRadius.md,
-    marginTop: brand.spacing.md,
     fontSize: '14px',
+    fontWeight: 500,
+  },
+  toastClose: {
+    background: 'none',
+    border: 'none',
+    fontSize: '18px',
+    cursor: 'pointer',
+    opacity: 0.6,
+    padding: 0,
+    marginLeft: brand.spacing.sm,
+  },
+
+  // Main
+  main: {
+    flex: 1,
+    overflow: 'auto',
+    padding: brand.spacing.md,
+    paddingBottom: '100px',
+  },
+  tabContent: {
+    maxWidth: '500px',
+    margin: '0 auto',
   },
 
   // Card
   card: {
     background: brand.colors.white,
     borderRadius: brand.borderRadius.lg,
-    padding: brand.spacing.xl,
-    marginBottom: brand.spacing.lg,
+    padding: brand.spacing.lg,
     boxShadow: brand.shadows.card,
+    marginBottom: brand.spacing.md,
   },
   cardTitle: {
     fontFamily: brand.fonts.display,
-    fontSize: '22px',
+    fontSize: '20px',
     color: brand.colors.textPrimary,
-    margin: `0 0 ${brand.spacing.lg} 0`,
+    margin: `0 0 ${brand.spacing.md} 0`,
     fontWeight: 400,
   },
-  cardNote: {
-    fontSize: '13px',
-    color: brand.colors.textMuted,
-    textAlign: 'center',
-    marginTop: brand.spacing.md,
-    marginBottom: 0,
-  },
 
-  // Label
+  // Form
   label: {
     display: 'block',
     fontSize: '14px',
     fontWeight: 500,
     color: brand.colors.textPrimary,
     marginBottom: brand.spacing.sm,
+    marginTop: brand.spacing.md,
   },
-
-  // Input
-  input: {
-    width: '100%',
+  selectedTarget: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: brand.spacing.md,
-    fontSize: '16px',
-    border: `1px solid ${brand.colors.pinkDark}`,
+    background: brand.colors.pinkLight,
     borderRadius: brand.borderRadius.md,
     marginBottom: brand.spacing.md,
-    boxSizing: 'border-box',
-    fontFamily: brand.fonts.body,
-    background: brand.colors.pinkLight,
+  },
+  selectedName: {
+    fontWeight: 500,
     color: brand.colors.textPrimary,
-    outline: 'none',
+    fontSize: '14px',
+  },
+  clearBtn: {
+    width: '28px',
+    height: '28px',
+    background: 'transparent',
+    border: `1px solid ${brand.colors.textMuted}`,
+    borderRadius: '50%',
+    color: brand.colors.textMuted,
+    fontSize: '16px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
   },
 
   // Buttons
-  button: {
+  primaryBtn: {
     width: '100%',
     padding: brand.spacing.md,
-    fontSize: '16px',
-    fontWeight: 600,
+    background: brand.gradients.button,
+    color: 'white',
     border: 'none',
     borderRadius: brand.borderRadius.full,
-    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: 600,
     fontFamily: brand.fonts.body,
-    transition: 'all 0.2s ease',
-  },
-  buttonPrimary: {
-    background: brand.gradients.button,
-    color: brand.colors.white,
+    cursor: 'pointer',
     boxShadow: brand.shadows.glow,
+    marginTop: brand.spacing.md,
+    touchAction: 'manipulation',
   },
-  buttonDisabled: {
+  btnDisabled: {
     opacity: 0.5,
     cursor: 'not-allowed',
     boxShadow: 'none',
   },
-  buttonSmall: {
+  smallBtn: {
     padding: `${brand.spacing.xs} ${brand.spacing.md}`,
-    fontSize: '13px',
-    fontWeight: 500,
+    background: 'transparent',
     border: `1px solid ${brand.colors.rust}`,
     borderRadius: brand.borderRadius.full,
-    background: 'transparent',
     color: brand.colors.rust,
+    fontSize: '13px',
+    fontWeight: 500,
     cursor: 'pointer',
-    fontFamily: brand.fonts.body,
   },
 
   // List
@@ -539,97 +497,84 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: brand.spacing.md,
+    padding: `${brand.spacing.md} 0`,
     borderBottom: `1px solid ${brand.colors.pinkDark}`,
   },
-  listItemTitle: {
+  listText: {
     fontSize: '14px',
     color: brand.colors.textPrimary,
     fontFamily: 'monospace',
   },
-  listItemDate: {
+  listDate: {
     fontSize: '12px',
     color: brand.colors.textMuted,
+    marginTop: '2px',
   },
   matchBadge: {
     background: brand.colors.rust,
-    color: brand.colors.white,
-    padding: `${brand.spacing.xs} ${brand.spacing.md}`,
+    color: 'white',
+    padding: `${brand.spacing.xs} ${brand.spacing.sm}`,
     borderRadius: brand.borderRadius.full,
     fontSize: '12px',
     fontWeight: 600,
   },
-  emptyState: {
-    color: brand.colors.textMuted,
+
+  // Hint
+  hint: {
     textAlign: 'center',
-    padding: brand.spacing.lg,
-    fontSize: '14px',
-    lineHeight: 1.6,
-  },
-
-  // Info Card
-  infoCard: {
-    background: brand.colors.pinkLight,
-    borderRadius: brand.borderRadius.lg,
-    padding: brand.spacing.lg,
-    border: `1px solid ${brand.colors.pinkDark}`,
-  },
-  infoTitle: {
-    fontFamily: brand.fonts.display,
-    fontSize: '16px',
-    color: brand.colors.textPrimary,
-    margin: `0 0 ${brand.spacing.md} 0`,
-    fontWeight: 400,
-  },
-  infoList: {
-    margin: 0,
-    paddingLeft: brand.spacing.lg,
-    color: brand.colors.textSecondary,
-    fontSize: '14px',
-    lineHeight: 1.8,
-  },
-
-  // Selected Target
-  selectedTarget: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: brand.spacing.md,
-    background: brand.colors.pinkLight,
-    border: `1px solid ${brand.colors.pinkDark}`,
-    borderRadius: brand.borderRadius.md,
-    marginBottom: brand.spacing.md,
-  },
-  selectedTargetInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: brand.spacing.sm,
-  },
-  selectedTargetAvatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: brand.borderRadius.full,
-    objectFit: 'cover',
-  },
-  selectedTargetName: {
-    fontWeight: 500,
-    color: brand.colors.textPrimary,
-    fontSize: '14px',
-  },
-  clearButton: {
-    width: '28px',
-    height: '28px',
-    background: 'transparent',
-    border: `1px solid ${brand.colors.textMuted}`,
-    borderRadius: brand.borderRadius.full,
+    fontSize: '13px',
     color: brand.colors.textMuted,
-    fontSize: '18px',
-    cursor: 'pointer',
+    padding: brand.spacing.md,
+  },
+
+  // Bottom Navigation
+  bottomNav: {
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
     display: 'flex',
+    background: brand.colors.white,
+    borderTop: `1px solid ${brand.colors.pinkDark}`,
+    paddingBottom: `max(${brand.spacing.sm}, env(safe-area-inset-bottom))`,
+    zIndex: 100,
+  },
+  navItem: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
-    lineHeight: 1,
+    padding: `${brand.spacing.sm} 0`,
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    position: 'relative',
+    color: brand.colors.textMuted,
+    transition: 'color 0.2s ease',
+  },
+  navItemActive: {
+    color: brand.colors.rust,
+  },
+  navIcon: {
+    fontSize: '20px',
+    marginBottom: '2px',
+  },
+  navLabel: {
+    fontSize: '11px',
+    fontWeight: 500,
+  },
+  navBadge: {
+    position: 'absolute',
+    top: '4px',
+    right: 'calc(50% - 20px)',
+    background: brand.colors.rust,
+    color: 'white',
+    fontSize: '10px',
+    fontWeight: 700,
+    padding: '2px 6px',
+    borderRadius: '10px',
+    minWidth: '16px',
+    textAlign: 'center',
   },
 };
 
