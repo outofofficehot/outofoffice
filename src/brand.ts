@@ -76,7 +76,7 @@ export const copy = {
   hero: {
     headline: 'Out Of Office',
     tagline: 'Signal interest. Stay discreet.',
-    subline: 'The private way to find out if they feel the same.',
+    subline: 'For the colleague you can\'t stop thinking about.',
   },
   
   cta: {
@@ -89,8 +89,8 @@ export const copy = {
     title: 'How it works',
     steps: [
       {
-        title: 'Share their profile',
-        desc: 'Paste a LinkedIn URL. We only see a hash—never the name.',
+        title: 'Find them on LinkedIn',
+        desc: 'Paste their LinkedIn URL. We hash it—never store names.',
       },
       {
         title: 'Put your money where your heart is',
