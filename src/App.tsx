@@ -297,29 +297,40 @@ function MainApp({ onBackToLanding }: MainAppProps) {
         )}
       </main>
 
-      {/* Bottom Navigation - Mobile Pattern */}
+      {/* Bottom Navigation */}
       <nav style={styles.bottomNav}>
         <button 
           onClick={() => setTab('signal')} 
           style={{...styles.navItem, ...(tab === 'signal' ? styles.navItemActive : {})}}
         >
-          <span style={styles.navIcon}>💫</span>
+          <svg style={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 4v16m-6-6l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="12" cy="4" r="2" fill="currentColor" stroke="none"/>
+          </svg>
           <span style={styles.navLabel}>Signal</span>
+          {tab === 'signal' && <span style={styles.navIndicator} />}
         </button>
         <button 
           onClick={() => setTab('matches')} 
           style={{...styles.navItem, ...(tab === 'matches' ? styles.navItemActive : {})}}
         >
-          <span style={styles.navIcon}>💕</span>
+          <svg style={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 21c-4-3.5-8-6.5-8-10.5 0-3 2.5-5.5 5.5-5.5 1.5 0 3 .8 4 2 1-1.2 2.5-2 4-2 3 0 5.5 2.5 5.5 5.5 0 4-4 7-8 10.5z" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
           <span style={styles.navLabel}>Matches</span>
           {myMatches.length > 0 && <span style={styles.navBadge}>{myMatches.length}</span>}
+          {tab === 'matches' && <span style={styles.navIndicator} />}
         </button>
         <button 
           onClick={() => setTab('you')} 
           style={{...styles.navItem, ...(tab === 'you' ? styles.navItemActive : {})}}
         >
-          <span style={styles.navIcon}>👤</span>
+          <svg style={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="12" cy="8" r="4" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
           <span style={styles.navLabel}>You</span>
+          {tab === 'you' && <span style={styles.navIndicator} />}
         </button>
       </nav>
     </div>
@@ -534,9 +545,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     left: 0,
     right: 0,
     display: 'flex',
-    background: brand.colors.white,
+    background: brand.colors.base,
     borderTop: `1px solid ${brand.colors.pinkDark}`,
-    paddingBottom: `max(${brand.spacing.sm}, env(safe-area-inset-bottom))`,
+    paddingTop: brand.spacing.sm,
+    paddingBottom: `max(${brand.spacing.md}, env(safe-area-inset-bottom))`,
     zIndex: 100,
   },
   navItem: {
@@ -544,37 +556,51 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    padding: `${brand.spacing.sm} 0`,
+    gap: '4px',
+    padding: `${brand.spacing.xs} 0`,
     background: 'none',
     border: 'none',
     cursor: 'pointer',
     position: 'relative',
     color: brand.colors.textMuted,
-    transition: 'color 0.2s ease',
+    transition: 'all 0.2s ease',
+    fontFamily: brand.fonts.body,
   },
   navItemActive: {
     color: brand.colors.rust,
   },
   navIcon: {
-    fontSize: '20px',
-    marginBottom: '2px',
+    width: '22px',
+    height: '22px',
   },
   navLabel: {
     fontSize: '11px',
     fontWeight: 500,
+    letterSpacing: '0.02em',
+  },
+  navIndicator: {
+    position: 'absolute',
+    bottom: '-4px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '4px',
+    height: '4px',
+    borderRadius: '50%',
+    background: brand.colors.rust,
   },
   navBadge: {
     position: 'absolute',
-    top: '4px',
-    right: 'calc(50% - 20px)',
+    top: '0',
+    right: 'calc(50% - 18px)',
     background: brand.colors.rust,
     color: 'white',
-    fontSize: '10px',
+    fontSize: '9px',
     fontWeight: 700,
-    padding: '2px 6px',
-    borderRadius: '10px',
-    minWidth: '16px',
+    padding: '2px 5px',
+    borderRadius: '8px',
+    minWidth: '14px',
     textAlign: 'center',
+    boxShadow: `0 2px 4px ${brand.colors.rust}40`,
   },
 };
 
