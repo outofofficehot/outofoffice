@@ -12,9 +12,9 @@ import { brand } from './brand';
 function App() {
   const [showApp, setShowApp] = useState(() => {
     if (typeof window === 'undefined') return false;
+    // Only show app if explicitly on #app or handling OAuth callback
     return window.location.hash === '#app' || 
-           window.location.search.includes('code=') || 
-           localStorage.getItem('ooo_visited') === 'true';
+           window.location.search.includes('code=');
   });
   
   const handleLaunchApp = () => {
