@@ -15,6 +15,7 @@ interface UseAztecReturn {
   signalInterest: (myLinkedInId: string, theirLinkedInId: string) => Promise<string>;
   checkMutual: (myLinkedInId: string, theirLinkedInId: string) => Promise<boolean>;
   withdrawSignal: (theirLinkedInId: string) => Promise<boolean>;
+  simulateFakeMatch: () => void; // Demo: trigger a fake match
   mySignals: Signal[];
   myMatches: Match[];
 }
@@ -135,6 +136,28 @@ export function useAztec(): UseAztecReturn {
     []
   );
 
+  // DEMO: Simulate a fake match (for user testing)
+  const simulateFakeMatch = useCallback(() => {
+    const fakeProfiles = [
+      { name: 'Sarah Chen', id: 'sarah-chen-demo' },
+      { name: 'James Wilson', id: 'james-wilson-demo' },
+      { name: 'Emma Rodriguez', id: 'emma-rodriguez-demo' },
+    ];
+    const randomProfile = fakeProfiles[Math.floor(Math.random() * fakeProfiles.length)];
+    const theirHash = simpleHash(randomProfile.id);
+    
+    // Add to matches
+    setMyMatches(prev => [
+      ...prev,
+      {
+        theirLinkedInHash: theirHash,
+        matchedAt: Date.now(),
+      },
+    ]);
+    
+    console.log('[DEMO] Simulated match with:', randomProfile.name);
+  }, []);
+
   return {
     pxe: null,
     wallet: null,
@@ -146,6 +169,7 @@ export function useAztec(): UseAztecReturn {
     signalInterest,
     checkMutual,
     withdrawSignal,
+    simulateFakeMatch,
     mySignals,
     myMatches,
   };

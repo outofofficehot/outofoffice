@@ -52,6 +52,7 @@ function MainApp({ onBackToLanding }: MainAppProps) {
     connect: connectWallet,
     signalInterest,
     checkMutual,
+    simulateFakeMatch,
     mySignals,
     myMatches,
   } = useAztec();
@@ -72,6 +73,7 @@ function MainApp({ onBackToLanding }: MainAppProps) {
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [showMatchReveal, setShowMatchReveal] = useState(false);
   const [revealedMatch, setRevealedMatch] = useState<any>(null);
+  const [demoTapCount, setDemoTapCount] = useState(0);
 
   useEffect(() => {
     connectWallet('sandbox');
@@ -164,7 +166,24 @@ function MainApp({ onBackToLanding }: MainAppProps) {
       {/* Header */}
       <header style={styles.header}>
         <button onClick={onBackToLanding} style={styles.backBtn}>←</button>
-        <img src="/assets/logo.png" alt="OOO" style={styles.logo} />
+        {/* Logo - tap 5 times quickly to trigger demo match */}
+        <img 
+          src="/assets/logo.png" 
+          alt="OOO" 
+          style={styles.logo}
+          onClick={() => {
+            const newCount = demoTapCount + 1;
+            setDemoTapCount(newCount);
+            // Reset after 2 seconds of no taps
+            setTimeout(() => setDemoTapCount(0), 2000);
+            // 5 taps triggers fake match
+            if (newCount >= 5) {
+              simulateFakeMatch();
+              setStatus({ type: 'success', message: '🎉 Match incoming!' });
+              setDemoTapCount(0);
+            }
+          }}
+        />
         <div style={styles.headerSpacer} />
       </header>
 

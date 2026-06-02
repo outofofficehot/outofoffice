@@ -38,6 +38,30 @@ const REDIRECT_URI = typeof window !== 'undefined'
 // OAuth scopes - profile + connections
 const SCOPES = ['openid', 'profile', 'r_1st_connections'].join(' ');
 
+// Demo mode: if no LinkedIn client ID configured, or ?demo=true in URL
+const isDemoMode = () => {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return !LINKEDIN_CLIENT_ID || params.get('demo') === 'true';
+};
+
+// Fake demo profiles for demo mode
+const DEMO_PROFILE: LinkedInProfile = {
+  id: 'demo-user-12345',
+  firstName: 'Demo',
+  lastName: 'User',
+  profileUrl: 'https://linkedin.com/in/demo-user',
+  picture: 'https://i.pravatar.cc/150?u=demo',
+};
+
+const DEMO_CONNECTIONS: LinkedInConnection[] = [
+  { id: 'conn-1', firstName: 'Sarah', lastName: 'Chen', headline: 'Product Manager at TechCo', profileUrl: 'https://linkedin.com/in/sarah-chen', picture: 'https://i.pravatar.cc/150?u=sarah' },
+  { id: 'conn-2', firstName: 'James', lastName: 'Wilson', headline: 'Software Engineer', profileUrl: 'https://linkedin.com/in/james-wilson', picture: 'https://i.pravatar.cc/150?u=james' },
+  { id: 'conn-3', firstName: 'Emma', lastName: 'Rodriguez', headline: 'Founder & CEO', profileUrl: 'https://linkedin.com/in/emma-rodriguez', picture: 'https://i.pravatar.cc/150?u=emma' },
+  { id: 'conn-4', firstName: 'Alex', lastName: 'Kim', headline: 'Designer at StartupXYZ', profileUrl: 'https://linkedin.com/in/alex-kim', picture: 'https://i.pravatar.cc/150?u=alex' },
+  { id: 'conn-5', firstName: 'Michael', lastName: 'Johnson', headline: 'Investor', profileUrl: 'https://linkedin.com/in/michael-johnson', picture: 'https://i.pravatar.cc/150?u=michael' },
+];
+
 export function useLinkedIn(): UseLinkedInReturn {
   const [profile, setProfile] = useState<LinkedInProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -124,8 +148,21 @@ export function useLinkedIn(): UseLinkedInReturn {
     handleCallback();
   }, []);
 
-  // Initiate OAuth flow
-  const connect = useCallback(() => {
+  // Initiate OAuth flow (or demo mode)
+  const connect = useCallback(async () => {
+    // Demo mode: instant fake login
+    if (isDemoMode()) {
+      setIsLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate delay
+      setProfile(DEMO_PROFILE);
+      setConnectionsAvailable(true);
+      localStorage.setItem('ooo_linkedin_profile', JSON.stringify(DEMO_PROFILE));
+      setIsLoading(false);
+      console.log('[DEMO MODE] Fake LinkedIn login');
+      return;
+    }
+
+    // Real OAuth flow
     if (!LINKEDIN_CLIENT_ID) {
       setError('LinkedIn OAuth not configured');
       return;
@@ -155,9 +192,24 @@ export function useLinkedIn(): UseLinkedInReturn {
     localStorage.removeItem('ooo_linkedin_token');
   }, []);
 
-  // Search connections
+  // Search connections (demo mode returns fake connections)
   const searchConnections = useCallback(async (query: string): Promise<LinkedInConnection[]> => {
-    if (!accessToken || query.length < 2) {
+    if (query.length < 2) {
+      return [];
+    }
+
+    // Demo mode: filter fake connections
+    if (isDemoMode()) {
+      await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
+      const q = query.toLowerCase();
+      return DEMO_CONNECTIONS.filter(
+        c => c.firstName.toLowerCase().includes(q) || 
+             c.lastName.toLowerCase().includes(q) ||
+             (c.headline?.toLowerCase().includes(q))
+      );
+    }
+
+    if (!accessToken) {
       return [];
     }
 
