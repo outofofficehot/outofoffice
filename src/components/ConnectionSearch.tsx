@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { brand } from '../brand';
 import { LinkedInConnection } from '../hooks/useLinkedIn';
+import { isValidLinkedIn } from '../utils/linkedin';
 
 interface ConnectionSearchProps {
   onSelect: (connection: LinkedInConnection | string) => void;
@@ -57,6 +58,19 @@ export const ConnectionSearch: React.FC<ConnectionSearchProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
+
+    // If it's a valid LinkedIn URL/ID, auto-select it
+    if (value && isValidLinkedIn(value)) {
+      // Delay slightly to avoid selecting mid-paste
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = setTimeout(() => {
+        onSelect(value);
+        setQuery('');
+      }, 500);
+      return;
+    }
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
